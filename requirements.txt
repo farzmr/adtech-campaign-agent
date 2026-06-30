@@ -1,0 +1,9 @@
+google-adk
+mcp
+streamlit
+google-generativeai
+google-genai
+pandas
+pillow
+python-dotenv
+nest-asyncio
