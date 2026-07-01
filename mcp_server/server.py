@@ -15,11 +15,13 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 CAMPAIGNS_FILE = os.path.join(DATA_DIR, "campaigns.csv")
 ADS_FILE = os.path.join(DATA_DIR, "ads.csv")
 PERFORMANCE_FILE = os.path.join(DATA_DIR, "ad_performance.csv")
+CHANGELOG_FILE = os.path.join(DATA_DIR, "change_log.csv")
 
 # Standard schemas matching user's pre-existing files
-CAMPAIGN_COLS = ["campaign_id", "name", "objective", "channel", "total_budget", "status", "start_date", "end_date"]
+CAMPAIGN_COLS = ["campaign_id", "name", "objective", "channel", "total_budget", "status", "start_date", "end_date", "time_of_day", "device"]
 ADS_COLS = ["ad_id", "campaign_id", "headline", "body_text", "cta", "image_size", "image_url", "ad_type", "status", "copy_tone", "img_category"]
 PERF_COLS = ["perf_id", "ad_id", "campaign_id", "date", "day_of_week", "device", "time_of_day", "impressions", "clicks", "ctr", "spend", "conversions", "roas", "cost_per_click"]
+CHANGELOG_COLS = ["log_id", "timestamp", "campaign_id", "change_type", "target_id", "details"]
 
 def _load_csv(file_path: str, default_cols: list) -> pd.DataFrame:
     """Helper to load a CSV or return an empty DataFrame with expected columns if it doesn't exist."""
@@ -42,6 +44,33 @@ def _save_csv(df: pd.DataFrame, file_path: str):
     """Helper to save a DataFrame to CSV."""
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     df.to_csv(file_path, index=False)
+
+def _write_change_log(campaign_id: str, change_type: str, target_id: str, details: str):
+    """Helper to log a change in the change_log dataset."""
+    import datetime
+    df = _load_csv(CHANGELOG_FILE, CHANGELOG_COLS)
+    
+    if not df.empty:
+        try:
+            numeric_ids = df["log_id"].astype(str).str.extract(r'(\d+)').dropna().astype(int)
+            next_id = int(numeric_ids.max().iloc[0]) + 1
+        except Exception:
+            next_id = len(df) + 1
+    else:
+        next_id = 1
+        
+    log_id = f"L{str(next_id).zfill(3)}"
+    new_log = {
+        "log_id": log_id,
+        "timestamp": datetime.datetime.now().isoformat(),
+        "campaign_id": str(campaign_id),
+        "change_type": change_type,
+        "target_id": str(target_id),
+        "details": details
+    }
+    df = pd.concat([df, pd.DataFrame([new_log])], ignore_index=True)
+    _save_csv(df, CHANGELOG_FILE)
+
 
 @mcp.tool()
 def get_campaigns() -> str:
@@ -109,9 +138,15 @@ def update_ad_status(ad_id: str, status: str) -> str:
     if df.empty or ad_id not in df["ad_id"].astype(str).values:
         return f"Error: Ad ID '{ad_id}' not found."
         
+    # Look up campaign_id before saving status
+    ad_row = df[df["ad_id"].astype(str) == str(ad_id)]
+    campaign_id = ad_row["campaign_id"].values[0] if not ad_row.empty else "Unknown"
+
     df.loc[df["ad_id"].astype(str) == str(ad_id), "status"] = status
     _save_csv(df, ADS_FILE)
+    _write_change_log(campaign_id, "update_ad_status", ad_id, f"Updated status to '{status}'")
     return f"Successfully updated ad '{ad_id}' status to '{status}'"
+
 
 @mcp.tool()
 def create_ad(campaign_id: str, headline: str, body: str, status: str = "active") -> str:
@@ -161,7 +196,32 @@ def create_ad(campaign_id: str, headline: str, body: str, status: str = "active"
     
     ads_df = pd.concat([ads_df, pd.DataFrame([new_ad])], ignore_index=True)
     _save_csv(ads_df, ADS_FILE)
+    _write_change_log(campaign_id, "create_ad", new_ad_id, f"Created new ad with headline: '{headline}'")
     return f"Successfully created ad '{new_ad_id}' under campaign '{campaign_id}'"
+
+
+@mcp.tool()
+def update_campaign_targeting(campaign_id: str, device: str, time_of_day: str) -> str:
+    """Update targeting settings (device and time of day) for a campaign."""
+    if not campaign_id or not campaign_id.strip():
+        return "Error: campaign_id is required."
+    if not device or not device.strip():
+        return "Error: device is required."
+    if not time_of_day or not time_of_day.strip():
+        return "Error: time_of_day is required."
+        
+    df = _load_csv(CAMPAIGNS_FILE, CAMPAIGN_COLS)
+    if df.empty or campaign_id not in df["campaign_id"].astype(str).values:
+        return f"Error: Campaign ID '{campaign_id}' not found."
+        
+    # Standardize case to match expected casing
+    df.loc[df["campaign_id"].astype(str) == str(campaign_id), "device"] = device.lower().strip()
+    df.loc[df["campaign_id"].astype(str) == str(campaign_id), "time_of_day"] = time_of_day.lower().strip()
+    _save_csv(df, CAMPAIGNS_FILE)
+    _write_change_log(campaign_id, "update_campaign_targeting", campaign_id, f"Updated targeting to device: '{device}', time_of_day: '{time_of_day}'")
+    return f"Successfully updated campaign '{campaign_id}' targeting: device='{device}', time_of_day='{time_of_day}'"
+
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")
+

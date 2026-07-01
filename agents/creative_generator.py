@@ -276,6 +276,7 @@ def generate_and_save_ad_image(prompt: str, filename: str, headline: str, body: 
             import re
             import random
             import urllib.request
+            import ssl
             
             camp_match = re.search(r'C\d{3}', filename)
             camp_id = camp_match.group(0) if camp_match else "C001"
@@ -301,7 +302,10 @@ def generate_and_save_ad_image(prompt: str, filename: str, headline: str, body: 
                 url, 
                 headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
             )
-            with urllib.request.urlopen(req, timeout=10) as download_res:
+            
+            # Bypass SSL certificate verification issues common on macOS
+            ssl_context = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, context=ssl_context, timeout=10) as download_res:
                 image_data = download_res.read()
                 
             image = Image.open(BytesIO(image_data))
@@ -329,21 +333,15 @@ def generate_and_save_ad_image(prompt: str, filename: str, headline: str, body: 
                     "message": f"All image generation tiers failed. Imagen: {str(e)}. Download: {str(download_err)}. Local PIL: {str(local_err)}"
                 }
 
+# Read prompt from markdown file
+PROMPT_PATH = os.path.join(BASE_DIR, "agents", "prompts", "creative_generator.md")
+with open(PROMPT_PATH, "r") as f:
+    creative_generator_instruction = f.read()
+
 creative_generator_agent = Agent(
-    name="creative_generator",
+    name="automation_and_generation_actions",
     model="gemini-3.1-flash-lite",
-    instruction="""You are the Creative Generator agent.
-Your job is to optimize the campaign creative assets using insights from the Creative Analyzer and Performance Stats agents.
-
-CRITICAL: You must ONLY modify (pause) or create ads for the requested campaign_id. When calling `create_ad`, ensure you pass the correct target `campaign_id` as provided in the instructions.
-
-You must perform three actions:
-1. Turn off (pause) the lowest performing ads in the campaign by calling the update_ad_status tool.
-2. Write a new ad copy (headline, body, status='active') based on the top performer's style. Save this new ad using the create_ad tool.
-3. Generate a matching display ad image using the generate_and_save_ad_image tool, saving it under a descriptive filename (e.g., 'ad_<id>.png') in the generated_ads/ folder, and passing the prompt, filename, headline, and body parameters.
-
-Use the provided MCP tools to modify ad statuses and create new ads, and the generate_and_save_ad_image tool to generate creatives.
-""",
+    instruction=creative_generator_instruction,
     tools=[mcp_toolset, generate_and_save_ad_image],
     before_model_callback=rate_limit_callback
 )
