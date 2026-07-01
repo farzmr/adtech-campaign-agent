@@ -4,7 +4,7 @@ A002,C001,New Season Arrivals,Shop the latest trends now.,Shop Now,300x250,image
 A003,C001,Fresh Looks Daily,New arrivals every week.,Explore Now,160x600,images/A003.png,display,paused,informational,promo
 A004,C001,Trend Alert 2024,Style redefined this season.,Get Started,320x50,images/A004.png,display,paused,emotional,lifestyle
 A005,C002,Next-Gen Gadgets,Best gadgets at best prices.,Shop Now,300x250,images/A005.png,display,active,urgent,product
-A006,C002,Tech Deals Today,"Top tech, unbeatable deals.",Get Started,728x90,images/A006.png,display,active,informational,promo
+A006,C002,Tech Deals Today,"Top tech, unbeatable deals.",Get Started,728x90,images/A006.png,display,paused,informational,promo
 A007,C002,Power Your Life,Upgrade your devices today.,Learn More,320x50,images/A007.png,display,active,playful,product
 A008,C002,Smart Savings,Save big on top brands.,Shop Now,160x600,images/A008.png,display,paused,urgent,text-heavy
 A009,C003,Your Story Starts Here,Build your brand with us.,Learn More,728x90,images/A009.png,display,active,emotional,lifestyle
@@ -15,7 +15,7 @@ A013,C004,See What's Next,Reach millions who matter.,Watch Now,300x250,images/A0
 A014,C004,Discover More,"Your brand, amplified.",Learn More,728x90,images/A014.png,display,active,emotional,promo
 A015,C004,Big Ideas Bold Moves,"More reach, more impact.",Discover More,160x600,images/A015.png,display,paused,urgent,text-heavy
 A016,C004,Watch and Remember,Video that resonates.,Watch Now,320x50,images/A016.png,display,paused,playful,product
-A017,C005,Read What's Hot,Drive traffic to your blog.,Click Here,728x90,images/A017.png,display,active,playful,lifestyle
+A017,C005,Read What's Hot,Drive traffic to your blog.,Click Here,728x90,images/A017.png,display,paused,playful,lifestyle
 A018,C005,Ideas Worth Clicking,Get more readers today.,Learn More,320x50,images/A018.png,display,paused,informational,text-heavy
 A019,C005,Daily Inspiration,Clicks that convert.,Explore Now,300x250,images/A019.png,display,active,emotional,lifestyle
 A020,C005,Explore More Today,Grow your audience fast.,Get Started,160x600,images/A020.png,display,paused,urgent,promo
@@ -23,5 +23,8 @@ A021,C001,Your Fresh Style Awaits,Explore our vibrant new collection and redefin
 A022,C001,Your Ultimate Style Upgrade Is Here,Dive into our exclusive vibrant collection and effortlessly redefine your personal style. Discover pieces crafted just for you!,Learn More,300x250,images/A022.png,display,active,conversational,lifestyle
 A023,C002,Power Your Life!,Give your devices a playful boost! It's time to upgrade and power up your everyday adventures.,Learn More,300x250,images/A023.png,display,active,conversational,lifestyle
 A024,C005,Unlock Your Blog's Growth Potential,Convert your traffic into loyal subscribers with our tools. Start Growing.,Learn More,300x250,images/A024.png,display,active,conversational,lifestyle
-A025,C005,Unlock Your Full Growth Potential Now,Transform your audience into dedicated subscribers with our growth engine. Start your journey to success today.,Learn More,300x250,images/A025.png,display,active,conversational,lifestyle
+A025,C005,Unlock Your Full Growth Potential Now,Transform your audience into dedicated subscribers with our growth engine. Start your journey to success today.,Learn More,300x250,images/A025.png,display,paused,conversational,lifestyle
 A026,C004,Amplify Your Voice Today,Amplify your brand's reach with precision. See real results tonight.,Learn More,300x250,images/A026.png,display,active,conversational,lifestyle
+A027,C005,Unlock Your Full Growth Potential Now,Transform your audience into loyal subscribers with our high-performance growth tools. Start your journey to success today.,Learn More,300x250,images/A027.png,display,paused,conversational,lifestyle
+A028,C005,Scale Your Blog Audience 2x Faster,Scale your blog audience 2x faster with our proven high-performance growth tools. Start your journey to success today.,Learn More,300x250,images/A028.png,display,active,conversational,lifestyle
+A029,C002,Elevate Your Daily Adventures,Ready for your next adventure? Power your life with devices that keep up with your pace. Upgrade today and experience the difference.,Learn More,300x250,images/A029.png,display,active,conversational,lifestyle

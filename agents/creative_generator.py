@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 from google.adk.agents import Agent
 from google.adk.tools.mcp_tool import McpToolset
@@ -6,11 +7,13 @@ from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
 from google import genai
 from google.genai import types
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.models.llm_request import LlmRequest
 from google.adk.models.llm_response import LlmResponse
+
+import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER_PATH = os.path.join(BASE_DIR, "mcp_server", "server.py")
@@ -19,7 +22,7 @@ SERVER_PATH = os.path.join(BASE_DIR, "mcp_server", "server.py")
 mcp_toolset = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
-            command="python3",
+            command=sys.executable,
             args=[SERVER_PATH],
         )
     )
@@ -30,21 +33,221 @@ async def rate_limit_callback(callback_context: CallbackContext, llm_request: Ll
     await asyncio.sleep(12)
     return None
 
-def generate_and_save_ad_image(prompt: str, filename: str) -> dict:
+def overlay_text_on_image(image: Image.Image, headline: str, body: str) -> Image.Image:
+    """Overlays the headline, body text, and a call-to-action button on top of a PIL image.
+    
+    Ensures high legibility by drawing a translucent card or gradient behind the text.
+    """
+    draw = ImageDraw.Draw(image, "RGBA")
+    width, height = image.size
+    
+    # 1. Draw a semi-transparent dark container on the lower half of the image for contrast
+    card_margin = 24
+    card_x1 = card_margin
+    card_y1 = int(height * 0.52)
+    card_x2 = width - card_margin
+    card_y2 = height - card_margin
+    
+    # Draw dark translucent backdrop card
+    draw.rounded_rectangle([card_x1, card_y1, card_x2, card_y2], radius=16, fill=(15, 23, 42, 215))
+    
+    # Also draw a subtle glowing border around the card
+    draw.rounded_rectangle([card_x1, card_y1, card_x2, card_y2], radius=16, outline=(124, 90, 237, 120), width=1)
+    
+    # 2. Try loading a premium macOS TrueType font
+    font_title = None
+    font_body = None
+    font_cta = None
+    
+    font_paths = [
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/Supplemental/HelveticaNeue.ttc",
+        "/Library/Fonts/Arial.ttf"
+    ]
+    
+    for path in font_paths:
+        if os.path.exists(path):
+            try:
+                font_title = ImageFont.truetype(path, 24)
+                font_body = ImageFont.truetype(path, 14)
+                font_cta = ImageFont.truetype(path, 13)
+                break
+            except Exception:
+                continue
+                
+    if font_title is None:
+        font_title = ImageFont.load_default()
+        font_body = ImageFont.load_default()
+        font_cta = ImageFont.load_default()
+        
+    # Helper to wrap text
+    def wrap_text(text, font, max_width_px):
+        if not text:
+            return []
+        if not hasattr(font, "getbbox"):
+            words = text.split()
+            lines = []
+            current_line = []
+            for word in words:
+                if len(" ".join(current_line + [word])) * 6 < max_width_px:
+                    current_line.append(word)
+                else:
+                    lines.append(" ".join(current_line))
+                    current_line = [word]
+            if current_line:
+                lines.append(" ".join(current_line))
+            return lines
+            
+        words = text.split()
+        lines = []
+        current_line = []
+        for word in words:
+            test_line = " ".join(current_line + [word])
+            bbox = font.getbbox(test_line)
+            w = bbox[2] - bbox[0]
+            if w <= max_width_px:
+                current_line.append(word)
+            else:
+                lines.append(" ".join(current_line))
+                current_line = [word]
+        if current_line:
+            lines.append(" ".join(current_line))
+        return lines
+
+    # Wrap title & body
+    max_text_width = card_x2 - card_x1 - 40
+    title_lines = wrap_text(headline, font_title, max_text_width)
+    body_lines = wrap_text(body, font_body, max_text_width)
+    
+    # 3. Draw Headline Text
+    curr_y = card_y1 + 24
+    for line in title_lines[:2]:
+        draw.text((card_x1 + 20, curr_y), line, fill=(255, 255, 255, 255), font=font_title)
+        if hasattr(font_title, "getbbox"):
+            curr_y += font_title.getbbox(line)[3] - font_title.getbbox(line)[1] + 6
+        else:
+            curr_y += 28
+            
+    # Add a tiny gap
+    curr_y += 4
+    
+    # 4. Draw Body Text
+    for line in body_lines[:3]:
+        draw.text((card_x1 + 20, curr_y), line, fill=(209, 213, 219, 255), font=font_body)
+        if hasattr(font_body, "getbbox"):
+            curr_y += font_body.getbbox(line)[3] - font_body.getbbox(line)[1] + 4
+        else:
+            curr_y += 18
+            
+    # 5. Draw CTA Button
+    cta_text = "SHOP NOW"
+    cta_w, cta_h = 110, 32
+    cta_x1 = card_x2 - cta_w - 20
+    cta_y1 = card_y2 - cta_h - 20
+    cta_x2 = card_x2 - 20
+    cta_y2 = card_y2 - 20
+    
+    # Pill background
+    draw.rounded_rectangle([cta_x1, cta_y1, cta_x2, cta_y2], radius=16, fill=(124, 58, 237, 255))
+    
+    # Text inside CTA
+    if hasattr(font_cta, "getbbox"):
+        bbox = font_cta.getbbox(cta_text)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
+    else:
+        tw = len(cta_text) * 6
+        th = 10
+        
+    tx = cta_x1 + (cta_w - tw) // 2
+    ty = cta_y1 + (cta_h - th) // 2 - 1
+    draw.text((tx, ty), cta_text, fill=(255, 255, 255, 255), font=font_cta)
+    
+    return image
+
+
+def draw_fallback_image(headline: str, body: str) -> Image.Image:
+    """Generates a highly creative, visually stunning fallback display ad image in PIL."""
+    img = Image.new("RGB", (600, 600), "#0f172a")
+    draw = ImageDraw.Draw(img, "RGBA")
+    
+    # Gradient background
+    for y in range(600):
+        ratio = y / 600.0
+        r = int(124 * (1 - ratio) + 15 * ratio)
+        g = int(58 * (1 - ratio) + 23 * ratio)
+        b = int(237 * (1 - ratio) + 42 * ratio)
+        draw.line([(0, y), (600, y)], fill=(r, g, b, 255))
+        
+    # Geometric shapes/glows
+    draw.circle((500, 100), 180, fill=(217, 70, 239, 40))
+    draw.circle((100, 300), 120, fill=(6, 182, 212, 30))
+    
+    for i in range(0, 600, 80):
+        draw.line([(i, 0), (i + 150, 600)], fill=(255, 255, 255, 10), width=2)
+        
+    draw.rectangle([15, 15, 585, 585], outline=(139, 92, 246, 180), width=2)
+    
+    # Badge
+    font_badge = None
+    font_paths = [
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/System/Library/Fonts/Supplemental/HelveticaNeue.ttc",
+        "/Library/Fonts/Arial.ttf"
+    ]
+    for path in font_paths:
+        if os.path.exists(path):
+            try:
+                font_badge = ImageFont.truetype(path, 11)
+                break
+            except Exception:
+                continue
+    if font_badge is None:
+        font_badge = ImageFont.load_default()
+        
+    badge_x1, badge_y1 = 36, 36
+    badge_text = "⚡ AD PILOT OPTIMIZED"
+    if hasattr(font_badge, "getbbox"):
+        badge_w = font_badge.getbbox(badge_text)[2] - font_badge.getbbox(badge_text)[0] + 16
+        badge_h = 22
+    else:
+        badge_w = len(badge_text) * 6 + 16
+        badge_h = 22
+        
+    draw.rounded_rectangle([badge_x1, badge_y1, badge_x1 + badge_w, badge_y1 + badge_h], radius=11, fill=(255, 255, 255, 40), outline=(255, 255, 255, 100), width=1)
+    draw.text((badge_x1 + 8, badge_y1 + 4), badge_text, fill=(255, 255, 255, 230), font=font_badge)
+    
+    return img
+
+
+def generate_and_save_ad_image(prompt: str, filename: str, headline: str, body: str) -> dict:
     """Generates a display ad image using Gemini Imagen and saves it to the generated_ads/ folder.
     
+    Tries three tiers:
+    1. Gemini Imagen API
+    2. Dynamic high-quality stock photo download (matching campaign category)
+    3. Local PIL mockup drawing
+    
     Args:
-        prompt: The text prompt describing the image to generate.
+        prompt: The visual description for the background image.
         filename: The filename (e.g., 'ad_new.png') to save the image under.
+        headline: The exact new headline text to render/overlay on the image.
+        body: The exact new body text to render/overlay on the image.
         
     Returns:
         dict containing the status and absolute path of the generated image.
     """
+    output_dir = os.path.join(BASE_DIR, "generated_ads")
+    os.makedirs(output_dir, exist_ok=True)
+    filepath = os.path.join(output_dir, filename)
+
+    # Tier 1: Try Gemini Imagen API
     try:
-        # Initialize GenAI client
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            return {"status": "error", "message": "GEMINI_API_KEY environment variable is not set."}
+            raise ValueError("GEMINI_API_KEY environment variable is not set.")
             
         client = genai.Client(api_key=api_key)
         
@@ -59,62 +262,72 @@ def generate_and_save_ad_image(prompt: str, filename: str) -> dict:
             )
         )
         
-        # Save to generated_ads/
-        output_dir = os.path.join(BASE_DIR, "generated_ads")
-        os.makedirs(output_dir, exist_ok=True)
-        
-        filepath = os.path.join(output_dir, filename)
-        
         if response.generated_images:
             image_bytes = response.generated_images[0].image.image_bytes
             image = Image.open(BytesIO(image_bytes))
+            # Save raw image directly without text overlay
             image.save(filepath)
             return {"status": "success", "filepath": filepath}
                 
-        return {"status": "error", "message": "No image data returned from model."}
+        raise ValueError("No image data returned from model.")
     except Exception as e:
-        # Fallback to local PIL image generation in case Imagen 3 is unavailable on this free API key
+        # Tier 2: Try downloading a dynamic professional stock image
         try:
-            output_dir = os.path.join(BASE_DIR, "generated_ads")
-            os.makedirs(output_dir, exist_ok=True)
-            filepath = os.path.join(output_dir, filename)
+            import re
+            import random
+            import urllib.request
             
-            # Generate a gorgeous dark gradient banner with borders
-            img = Image.new("RGB", (600, 600), "#0f172a")
-            draw = ImageDraw.Draw(img)
+            camp_match = re.search(r'C\d{3}', filename)
+            camp_id = camp_match.group(0) if camp_match else "C001"
             
-            # Simple gradient
-            for y in range(600):
-                r = int(15 + (y / 600) * 15)
-                g = int(23 + (y / 600) * 30)
-                b = int(42 + (y / 600) * 45)
-                draw.line([(0, y), (600, y)], fill=(r, g, b))
+            # Map campaign IDs to relevant keyword pools
+            category_terms = {
+                "C001": ["fashion", "clothing", "apparel", "style"],
+                "C002": ["technology", "gadgets", "electronics", "setup"],
+                "C003": ["lifestyle", "aesthetic", "minimalist"],
+                "C004": ["business", "growth", "success", "productivity"],
+                "C005": ["books", "reading", "library", "coffee-and-book"],
+            }
+            
+            terms = category_terms.get(camp_id, ["lifestyle"])
+            search_term = random.choice(terms)
+            
+            # Use Lorem Flickr as a reliable public random image search endpoint
+            # Bypassing cache with a random lock parameter to force a new image on every call
+            rand_lock = random.randint(1, 1000)
+            url = f"https://loremflickr.com/600/600/{search_term}?lock={rand_lock}"
+            
+            req = urllib.request.Request(
+                url, 
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            )
+            with urllib.request.urlopen(req, timeout=10) as download_res:
+                image_data = download_res.read()
                 
-            # Neon border
-            draw.rectangle([20, 20, 580, 580], outline="#38bdf8", width=4)
-            draw.rectangle([30, 30, 570, 570], outline="#1e293b", width=1)
+            image = Image.open(BytesIO(image_data))
+            image = image.resize((600, 600))
+            image.save(filepath)
             
-            # Text Mockup
-            draw.text((50, 100), "[ AI CREATIVE LAB ]", fill="#38bdf8")
-            draw.text((50, 180), "OPTIMIZED DISPLAY CREATIVE", fill="#f1f5f9")
-            
-            # Wrap prompt description
-            clean_prompt = prompt.replace("\n", " ").strip()
-            prompt_summary = clean_prompt[:45] + ("..." if len(clean_prompt) > 45 else "")
-            draw.text((50, 260), f"Concept: {prompt_summary}", fill="#e2e8f0")
-            
-            draw.text((50, 340), "Target Audience: Mobile & Desktop Segments", fill="#94a3b8")
-            draw.text((50, 420), "Format: 1:1 Social Display", fill="#94a3b8")
-            draw.text((50, 500), "STATUS: ACTIVE", fill="#10b981")
-            
-            img.save(filepath)
             return {
                 "status": "success", 
                 "filepath": filepath, 
-                "message": f"Used local premium mockup generator (Imagen API returned 404: {str(e)})"
+                "message": f"Downloaded dynamic stock photo for {camp_id} (keyword: {search_term}) (Imagen error: {str(e)})"
             }
-        except Exception as local_err:
-            return {"status": "error", "message": f"Imagen error: {str(e)}. Local fallback error: {str(local_err)}"}
+        except Exception as download_err:
+            # Tier 3: Fallback to local PIL image generation
+            try:
+                image = draw_fallback_image(headline, body)
+                image.save(filepath)
+                return {
+                    "status": "success", 
+                    "filepath": filepath, 
+                    "message": f"Used local PIL mockup generator (Imagen API error: {str(e)}. Download error: {str(download_err)})"
+                }
+            except Exception as local_err:
+                return {
+                    "status": "error", 
+                    "message": f"All image generation tiers failed. Imagen: {str(e)}. Download: {str(download_err)}. Local PIL: {str(local_err)}"
+                }
 
 creative_generator_agent = Agent(
     name="creative_generator",
@@ -122,10 +335,12 @@ creative_generator_agent = Agent(
     instruction="""You are the Creative Generator agent.
 Your job is to optimize the campaign creative assets using insights from the Creative Analyzer and Performance Stats agents.
 
+CRITICAL: You must ONLY modify (pause) or create ads for the requested campaign_id. When calling `create_ad`, ensure you pass the correct target `campaign_id` as provided in the instructions.
+
 You must perform three actions:
 1. Turn off (pause) the lowest performing ads in the campaign by calling the update_ad_status tool.
 2. Write a new ad copy (headline, body, status='active') based on the top performer's style. Save this new ad using the create_ad tool.
-3. Generate a matching display ad image using the generate_and_save_ad_image tool, saving it under a descriptive filename (e.g., 'ad_<id>.png') in the generated_ads/ folder.
+3. Generate a matching display ad image using the generate_and_save_ad_image tool, saving it under a descriptive filename (e.g., 'ad_<id>.png') in the generated_ads/ folder, and passing the prompt, filename, headline, and body parameters.
 
 Use the provided MCP tools to modify ad statuses and create new ads, and the generate_and_save_ad_image tool to generate creatives.
 """,

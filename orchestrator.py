@@ -110,7 +110,7 @@ Performance Analysis:
 Please perform the optimization steps:
 1. Turn off (pause) the lowest performing ad in this campaign via update_ad_status.
 2. Create a new optimized ad (headline, body) based on the top performer's style via create_ad.
-3. Generate a matching display ad image using generate_and_save_ad_image (save it as 'ad_new_{campaign_id}.png').
+3. Generate a matching display ad image using generate_and_save_ad_image, saving it as 'ad_new_{campaign_id}.png', and passing the visual prompt description, the filename, and the exact headline and body copy of the new ad you just created.
 """
         async for event in generator_runner.run_async(
             user_id=user_id,

@@ -1,4 +1,5 @@
 import os
+import sys
 import asyncio
 from google.adk.agents import Agent
 from google.adk.tools.mcp_tool import McpToolset
@@ -8,6 +9,8 @@ from google.adk.agents.callback_context import CallbackContext
 from google.adk.models.llm_request import LlmRequest
 from google.adk.models.llm_response import LlmResponse
 
+import sys
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SERVER_PATH = os.path.join(BASE_DIR, "mcp_server", "server.py")
 
@@ -15,7 +18,7 @@ SERVER_PATH = os.path.join(BASE_DIR, "mcp_server", "server.py")
 mcp_toolset = McpToolset(
     connection_params=StdioConnectionParams(
         server_params=StdioServerParameters(
-            command="python3",
+            command=sys.executable,
             args=[SERVER_PATH],
         )
     )
@@ -37,7 +40,9 @@ Find the best-performing device and time of day based on the campaign's objectiv
 - For "traffic": Look at clicks and CTR.
 
 Determine which segments (device, time of day) are performing best and which are performing worst.
-You can retrieve campaign list, ads list, and performance summary using the MCP tools.
+
+CRITICAL: You must ONLY fetch data for the specific campaign_id requested by the user. When calling `get_ads` or `get_performance_summary`, you MUST pass the requested campaign_id parameter. Do NOT query global dataset.
+
 Structure your output with clear insights on the best and worst performing segments.
 """,
     tools=[mcp_toolset],
