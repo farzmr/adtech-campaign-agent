@@ -221,14 +221,50 @@ def draw_fallback_image(headline: str, body: str) -> Image.Image:
     
     return img
 
+# Global cache for the stable diffusion pipeline to avoid reloading weights repeatedly
+_local_sd_pipeline = None
+
+def get_local_sd_pipeline():
+    """Helper to lazily load the local Stable Diffusion pipeline on Apple Silicon (MPS) or CPU."""
+    global _local_sd_pipeline
+    if _local_sd_pipeline is not None:
+        return _local_sd_pipeline
+
+    import torch
+    from diffusers import StableDiffusionPipeline
+
+    # Load the model weights (defaults to runwayml/stable-diffusion-v1-5)
+    model_id = "runwayml/stable-diffusion-v1-5"
+    
+    # Select device: MPS for Apple Silicon, CPU otherwise
+    if torch.backends.mps.is_available():
+        device = "mps"
+        # float32 is required on Apple Silicon MPS to avoid generating completely black images (NaN weights error)
+        torch_dtype = torch.float32
+    else:
+        device = "cpu"
+        torch_dtype = torch.float32
+
+    print(f"Loading local Stable Diffusion model ({model_id}) on device: {device}...")
+    pipe = StableDiffusionPipeline.from_pretrained(
+        model_id,
+        torch_dtype=torch_dtype,
+        safety_checker=None, # Disable safety checker to reduce RAM usage locally
+        requires_safety_checker=False
+    )
+    pipe = pipe.to(device)
+    # Enable memory attention slicing to save memory on laptops
+    pipe.enable_attention_slicing()
+    
+    _local_sd_pipeline = pipe
+    return _local_sd_pipeline
 
 def generate_and_save_ad_image(prompt: str, filename: str, headline: str, body: str) -> dict:
-    """Generates a display ad image using Gemini Imagen and saves it to the generated_ads/ folder.
+    """Generates a display ad image trying three sequential fallback tiers:
     
-    Tries three tiers:
-    1. Gemini Imagen API
-    2. Dynamic high-quality stock photo download (matching campaign category)
-    3. Local PIL mockup drawing
+    1. Gemini Imagen API (Cloud Generation)
+    2. Local Stable Diffusion Pipeline (via Hugging Face diffusers on MPS/CPU)
+    3. Local PIL mockup drawing (No-ML local fallback)
     
     Args:
         prompt: The visual description for the background image.
@@ -252,6 +288,7 @@ def generate_and_save_ad_image(prompt: str, filename: str, headline: str, body: 
         client = genai.Client(api_key=api_key)
         
         # Call imagen-3.0-generate-002
+        print("Attempting Tier 1: Gemini Imagen API...")
         response = client.models.generate_images(
             model='imagen-3.0-generate-002',
             prompt=prompt,
@@ -265,85 +302,67 @@ def generate_and_save_ad_image(prompt: str, filename: str, headline: str, body: 
         if response.generated_images:
             image_bytes = response.generated_images[0].image.image_bytes
             image = Image.open(BytesIO(image_bytes))
-            # Save raw image directly without text overlay
-            image.save(filepath)
-            return {"status": "success", "filepath": filepath}
-                
-        raise ValueError("No image data returned from model.")
-    except Exception as e:
-        # Tier 2: Try downloading a dynamic professional stock image
-        try:
-            import re
-            import random
-            import urllib.request
-            
-            camp_match = re.search(r'C\d{3}', filename)
-            camp_id = camp_match.group(0) if camp_match else "C001"
-            
-            # Map campaign IDs to relevant keyword pools
-            category_terms = {
-                "C001": ["fashion", "clothing", "apparel", "style"],
-                "C002": ["technology", "gadgets", "electronics", "setup"],
-                "C003": ["lifestyle", "aesthetic", "minimalist"],
-                "C004": ["business", "growth", "success", "productivity"],
-                "C005": ["books", "reading", "library", "coffee-and-book"],
-            }
-            
-            terms = category_terms.get(camp_id, ["lifestyle"])
-            search_term = random.choice(terms)
-            
-            # Use Lorem Flickr as a reliable public random image search endpoint
-            # Bypassing cache with a random lock parameter to force a new image on every call
-            rand_lock = random.randint(1, 1000)
-            url = f"https://loremflickr.com/600/600/{search_term}?lock={rand_lock}"
-            
-            req = urllib.request.Request(
-                url, 
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            )
-            with urllib.request.urlopen(req, timeout=10) as download_res:
-                image_data = download_res.read()
-                
-            image = Image.open(BytesIO(image_data))
             image = image.resize((600, 600))
             image.save(filepath)
-            
             return {
                 "status": "success", 
-                "filepath": filepath, 
-                "message": f"Downloaded dynamic stock photo for {camp_id} (keyword: {search_term}) (Imagen error: {str(e)})"
+                "filepath": filepath,
+                "message": "Generated using Gemini Imagen API (Tier 1)"
             }
-        except Exception as download_err:
+                
+        raise ValueError("No image data returned from Gemini Imagen.")
+    except Exception as e_imagen:
+        # Tier 2: Try local Stable Diffusion
+        try:
+            print(f"Tier 1 (Gemini Imagen) failed: {str(e_imagen)}. Falling back to Tier 2 (Local Stable Diffusion)...")
+            pipe = get_local_sd_pipeline()
+            
+            # Generate the image (512x512 is default and fastest for Stable Diffusion v1.5)
+            result = pipe(
+                prompt=prompt,
+                num_inference_steps=20,
+                height=512,
+                width=512
+            )
+            
+            if result.images:
+                image = result.images[0]
+                # Resize to the standard 600x600 expected by the ad-builder overlay template
+                image = image.resize((600, 600))
+                image.save(filepath)
+                return {
+                    "status": "success", 
+                    "filepath": filepath,
+                    "message": f"Generated using local Stable Diffusion v1.5 via diffusers (Tier 2). (Imagen error: {str(e_imagen)})"
+                }
+                    
+            raise ValueError("No image returned from local Stable Diffusion pipeline.")
+        except Exception as e_sd:
             # Tier 3: Fallback to local PIL image generation
             try:
+                print(f"Tier 2 (Local SD) failed: {str(e_sd)}. Falling back to Tier 3 (Local PIL Drawing)...")
                 image = draw_fallback_image(headline, body)
                 image.save(filepath)
                 return {
                     "status": "success", 
-                    "filepath": filepath, 
-                    "message": f"Used local PIL mockup generator (Imagen API error: {str(e)}. Download error: {str(download_err)})"
+                    "filepath": filepath,
+                    "message": f"Used local PIL mockup generator (Tier 3). (Imagen error: {str(e_imagen)}. Local SD error: {str(e_sd)})"
                 }
             except Exception as local_err:
                 return {
                     "status": "error", 
-                    "message": f"All image generation tiers failed. Imagen: {str(e)}. Download: {str(download_err)}. Local PIL: {str(local_err)}"
+                    "message": f"All image generation tiers failed. Imagen: {str(e_imagen)}. Local SD: {str(e_sd)}. Local PIL: {str(local_err)}"
                 }
 
+# Read prompt from markdown file
+PROMPT_PATH = os.path.join(BASE_DIR, "agents", "prompts", "creative_generator.md")
+with open(PROMPT_PATH, "r") as f:
+    creative_generator_instruction = f.read()
+
 creative_generator_agent = Agent(
-    name="creative_generator",
+    name="automation_and_generation_actions",
     model="gemini-3.1-flash-lite",
-    instruction="""You are the Creative Generator agent.
-Your job is to optimize the campaign creative assets using insights from the Creative Analyzer and Performance Stats agents.
-
-CRITICAL: You must ONLY modify (pause) or create ads for the requested campaign_id. When calling `create_ad`, ensure you pass the correct target `campaign_id` as provided in the instructions.
-
-You must perform three actions:
-1. Turn off (pause) the lowest performing ads in the campaign by calling the update_ad_status tool.
-2. Write a new ad copy (headline, body, status='active') based on the top performer's style. Save this new ad using the create_ad tool.
-3. Generate a matching display ad image using the generate_and_save_ad_image tool, saving it under a descriptive filename (e.g., 'ad_<id>.png') in the generated_ads/ folder, and passing the prompt, filename, headline, and body parameters.
-
-Use the provided MCP tools to modify ad statuses and create new ads, and the generate_and_save_ad_image tool to generate creatives.
-""",
+    instruction=creative_generator_instruction,
     tools=[mcp_toolset, generate_and_save_ad_image],
     before_model_callback=rate_limit_callback
 )

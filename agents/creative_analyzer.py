@@ -29,21 +29,15 @@ async def rate_limit_callback(callback_context: CallbackContext, llm_request: Ll
     await asyncio.sleep(12)
     return None
 
+# Read prompt from markdown file
+PROMPT_PATH = os.path.join(BASE_DIR, "agents", "prompts", "creative_analyzer.md")
+with open(PROMPT_PATH, "r") as f:
+    creative_analyzer_instruction = f.read()
+
 creative_analyzer_agent = Agent(
     name="creative_analyzer",
     model="gemini-3.1-flash-lite",
-    instruction="""You are the Creative Analyzer agent.
-Your job is to look at an ad's creative elements: headline, body text, CTA, copy tone, and image category.
-Score the creative quality (0 to 100), flag weak elements, and suggest specific copy and design improvements.
-
-CRITICAL: You must ONLY fetch and analyze ads for the specific campaign_id requested by the user. When calling the `get_ads` tool, you MUST pass the requested campaign_id parameter. Do NOT query all ads or look at other campaigns.
-
-Always structure your analysis clearly:
-1. Overall Quality Score (0-100)
-2. Detailed breakdown (Headline, Body, CTA, Tone, Visual Concept)
-3. Flagged weak elements
-4. Recommended improvements
-""",
+    instruction=creative_analyzer_instruction,
     tools=[mcp_toolset],
     before_model_callback=rate_limit_callback
 )

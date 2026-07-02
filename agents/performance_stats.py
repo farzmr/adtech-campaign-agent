@@ -29,22 +29,15 @@ async def rate_limit_callback(callback_context: CallbackContext, llm_request: Ll
     await asyncio.sleep(12)
     return None
 
+# Read prompt from markdown file
+PROMPT_PATH = os.path.join(BASE_DIR, "agents", "prompts", "performance_stats.md")
+with open(PROMPT_PATH, "r") as f:
+    performance_stats_instruction = f.read()
+
 performance_stats_agent = Agent(
     name="performance_stats",
     model="gemini-3.1-flash-lite",
-    instruction="""You are the Performance Stats agent.
-Your job is to read and analyze aggregated performance data for a campaign from the MCP server.
-Find the best-performing device and time of day based on the campaign's objective:
-- For "conversions": Look at conversions and spend to calculate performance (e.g., Conversion Rate, Cost per Conversion / ROAS).
-- For "awareness": Look at impressions and CTR (Click-Through Rate).
-- For "traffic": Look at clicks and CTR.
-
-Determine which segments (device, time of day) are performing best and which are performing worst.
-
-CRITICAL: You must ONLY fetch data for the specific campaign_id requested by the user. When calling `get_ads` or `get_performance_summary`, you MUST pass the requested campaign_id parameter. Do NOT query global dataset.
-
-Structure your output with clear insights on the best and worst performing segments.
-""",
+    instruction=performance_stats_instruction,
     tools=[mcp_toolset],
     before_model_callback=rate_limit_callback
 )

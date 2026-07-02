@@ -14,11 +14,62 @@ from agents import (
     creative_generator_agent,
 )
 
+def reset_datasets():
+    """Resets campaign and ads datasets, and change logs to their original baseline states."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 1. Reset all campaigns targeting back to default settings
+    campaigns_file = os.path.join(base_dir, "data", "campaigns.csv")
+    if os.path.exists(campaigns_file):
+        try:
+            df_camp = pd.read_csv(campaigns_file)
+            df_camp["device"] = "mobile, tablet, desktop"
+            df_camp["time_of_day"] = "morning, afternoon, night"
+            df_camp.to_csv(campaigns_file, index=False)
+            print("Campaign datasets reset successfully.")
+        except Exception as e:
+            print(f"Error resetting campaigns dataset: {e}")
+        
+    # 2. Reset ads: delete any generated ads (> A021) and set original 21 ads to active
+    ads_file = os.path.join(base_dir, "data", "ads.csv")
+    if os.path.exists(ads_file):
+        try:
+            df_ads = pd.read_csv(ads_file)
+            
+            def should_keep(ad_id):
+                try:
+                    if isinstance(ad_id, str) and ad_id.startswith("A"):
+                        return int(ad_id[1:]) <= 21
+                except (ValueError, TypeError):
+                    pass
+                return True
+                
+            df_ads = df_ads[df_ads["ad_id"].apply(should_keep)].copy()
+            df_ads["status"] = "active"
+            df_ads.to_csv(ads_file, index=False)
+            print("Ads datasets reset successfully.")
+        except Exception as e:
+            print(f"Error resetting ads dataset: {e}")
+
+    # 3. Clear/Truncate change log
+    changelog_file = os.path.join(base_dir, "data", "change_log.csv")
+    if os.path.exists(changelog_file):
+        try:
+            # Re-write the header row only
+            with open(changelog_file, "w") as f:
+                f.write("log_id,timestamp,campaign_id,change_type,target_id,details\n")
+            print("Change log cleared successfully.")
+        except Exception as e:
+            print(f"Error clearing change log: {e}")
+
 async def run_optimization_workflow(campaign_id: str) -> dict:
     """Coordinates the 3 agents in sequence to complete one full optimization run.
     
     Includes try/catch safeguards and checks for missing API keys to prevent crashes.
     """
+    # Reset datasets to original state before running optimization
+    reset_datasets()
+
     # 0. Check API Key
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key or api_key.strip() == "your_gemini_api_key_here":
@@ -111,6 +162,7 @@ Please perform the optimization steps:
 1. Turn off (pause) the lowest performing ad in this campaign via update_ad_status.
 2. Create a new optimized ad (headline, body) based on the top performer's style via create_ad.
 3. Generate a matching display ad image using generate_and_save_ad_image, saving it as 'ad_new_{campaign_id}.png', and passing the visual prompt description, the filename, and the exact headline and body copy of the new ad you just created.
+4. Extract the best segment (device and time of day) from the Performance Analysis above (e.g. "Best Segment: device -> <best_device>, time of day -> <best_time_of_day>") and call `update_campaign_targeting` to update this campaign's target device and time of day, keeping only this segment and removing all others.
 """
         async for event in generator_runner.run_async(
             user_id=user_id,

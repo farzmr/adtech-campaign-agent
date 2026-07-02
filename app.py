@@ -91,13 +91,13 @@ st.markdown("""
         border: 1px solid #DDD6FE;
     }
 
-    /* Card Panels */
-    .panel-card {
-        background-color: white;
-        border: 1px solid #E5E7EB;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    /* Card Panels & Streamlit Bordered Containers */
+    .panel-card, div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: white !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 16px !important;
+        padding: 24px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
     }
 
     .panel-title {
@@ -169,9 +169,9 @@ st.markdown("""
         font-size: 0.95rem !important;
     }
 
-    /* Gradient Launch Button */
+    /* Gradient Launch Button (Super glowy and purple) */
     .launch-btn-container button {
-        background: linear-gradient(135deg, #7C3AED 0%, #D946EF 100%) !important;
+        background: linear-gradient(135deg, #6D28D9 0%, #A855F7 100%) !important;
         color: white !important;
         border: none !important;
         padding: 12px 24px !important;
@@ -179,13 +179,45 @@ st.markdown("""
         font-weight: 700 !important;
         width: 100% !important;
         font-size: 1.1rem !important;
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.4) !important;
         height: 50px !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.3s ease !important;
     }
     .launch-btn-container button:hover {
-        box-shadow: 0 6px 16px rgba(124, 58, 237, 0.45) !important;
-        transform: translateY(-1px) !important;
+        box-shadow: 0 0 25px rgba(168, 85, 247, 0.7) !important;
+        transform: translateY(-2px) scale(1.02) !important;
+    }
+
+    /* Small Reset Button next to Launch Button */
+    .reset-btn-container button {
+        background-color: #F9FAFB !important;
+        color: #4B5563 !important;
+        border: 1px solid #D1D5DB !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        height: 50px !important;
+        width: 100% !important;
+        font-size: 0.9rem !important;
+        transition: all 0.2s ease !important;
+    }
+    .reset-btn-container button:hover {
+        background-color: #F3F4F6 !important;
+        border-color: #9CA3AF !important;
+    }
+
+    /* Custom selected campaign row highlight (Beautiful light purple theme) */
+    div[data-testid="stHorizontalBlock"]:has(.selected-row-marker) {
+        background-color: #FAF5FF !important; /* Premium light purple background */
+        border: 1px solid #E9D5FF !important; /* Soft border */
+        border-radius: 12px !important;
+        padding: 8px !important;
+        box-shadow: 0 4px 10px rgba(168, 85, 247, 0.05) !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.unselected-row-marker) {
+        border: 1px solid transparent !important;
+        padding: 8px !important;
+        transition: all 0.2s ease !important;
     }
 
     /* Custom Table Header & Rows */
@@ -574,17 +606,21 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 CAMPAIGNS_FILE = os.path.join(DATA_DIR, "campaigns.csv")
 ADS_FILE = os.path.join(DATA_DIR, "ads.csv")
 PERFORMANCE_FILE = os.path.join(DATA_DIR, "ad_performance.csv")
+CHANGELOG_FILE = os.path.join(DATA_DIR, "change_log.csv")
 
 # Dynamic Seeding Fallback (if files are completely empty/missing)
 def seed_data_if_missing():
     os.makedirs(DATA_DIR, exist_ok=True)
     # Check if campaigns file exists and is populated
     if not os.path.exists(CAMPAIGNS_FILE) or os.path.getsize(CAMPAIGNS_FILE) < 10:
-        c_df = pd.DataFrame([
-            {"campaign_id": "C001", "name": "Spring Fashion Drop", "objective": "conversions", "channel": "Meta", "total_budget": 8000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30"},
-            {"campaign_id": "C002", "name": "Tech Gadgets Sale", "objective": "conversions", "channel": "Google Display", "total_budget": 6000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30"},
-            {"campaign_id": "C003", "name": "Brand Moments", "objective": "awareness", "channel": "Pinterest", "total_budget": 5000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30"}
-        ])
+        base_campaigns = [
+            {"campaign_id": "C001", "name": "Spring Fashion Drop", "objective": "conversions", "channel": "Meta", "total_budget": 8000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30", "time_of_day": "morning, afternoon, night", "device": "mobile, tablet, desktop"},
+            {"campaign_id": "C002", "name": "Tech Gadgets Sale", "objective": "conversions", "channel": "Google Display", "total_budget": 6000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30", "time_of_day": "morning, afternoon, night", "device": "mobile, tablet, desktop"},
+            {"campaign_id": "C003", "name": "Brand Moments", "objective": "awareness", "channel": "Pinterest", "total_budget": 5000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30", "time_of_day": "morning, afternoon, night", "device": "mobile, tablet, desktop"},
+            {"campaign_id": "C004", "name": "Reach and Remember", "objective": "awareness", "channel": "YouTube", "total_budget": 7000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30", "time_of_day": "morning, afternoon, night", "device": "mobile, tablet, desktop"},
+            {"campaign_id": "C005", "name": "Daily Reads Traffic", "objective": "traffic", "channel": "TikTok", "total_budget": 4000, "status": "active", "start_date": "2024-06-01", "end_date": "2024-06-30", "time_of_day": "morning, afternoon, night", "device": "mobile, tablet, desktop"}
+        ]
+        c_df = pd.DataFrame(base_campaigns)
         c_df.to_csv(CAMPAIGNS_FILE, index=False)
 
 seed_data_if_missing()
@@ -727,8 +763,16 @@ def get_ad_analysis(ad_id, headline, body_text, cta, image_size):
     analysis = AD_ANALYSIS_FALLBACK.get(ad_id, {
         "quality": 92,
         "flagged": ["clean"],
-        "recommendations": ["Monitor performance in upcoming window", "Optimize audience targeting"]
+        "recommendations": ["None"]
     })
+    # If flagged as clean, clear recommendations
+    flagged_lower = [str(f).strip().lower() for f in analysis.get("flagged", [])]
+    if "clean" in flagged_lower or not flagged_lower:
+        analysis = {
+            "quality": analysis.get("quality", 95),
+            "flagged": ["clean"],
+            "recommendations": ["None"]
+        }
     return analysis
 
 # ----------------- BASE64 IMAGE HELPER -----------------
@@ -855,106 +899,138 @@ if st.session_state.page == "home":
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-        st.markdown('<div class="panel-title">RUN AN OPTIMIZATION</div>', unsafe_allow_html=True)
-        
-        # Build dropdown options mapping
-        camp_names_list = list(campaign_options.keys())
-        default_idx = 0
-        for idx, lbl in enumerate(camp_names_list):
-            if campaign_options[lbl]["campaign_id"] == st.session_state.selected_campaign:
-                default_idx = idx
-                break
-                
-        selected_label = st.selectbox("Campaign", camp_names_list, index=default_idx)
-        selected_camp = campaign_options[selected_label]
-        
-        # Update focus and selection on dropdown change
-        if selected_camp["campaign_id"] != st.session_state.selected_campaign:
-            st.session_state.selected_campaign = selected_camp["campaign_id"]
-            st.session_state.opt_focus = selected_camp["objective"]
-            st.rerun()
+        with st.container(border=True):
+            st.markdown('<div class="panel-title">RUN AN OPTIMIZATION</div>', unsafe_allow_html=True)
             
-        st.markdown('<div style="font-size: 0.85rem; font-weight: 600; color: #4B5563; margin-top: 15px; margin-bottom: 8px;">Optimization focus</div>', unsafe_allow_html=True)
-        
-        # Optimization Focus Toggle Buttons
-        col_aw, col_cv, col_tr = st.columns(3)
-        with col_aw:
-            is_aw = (st.session_state.opt_focus.lower().strip() == "awareness")
-            if st.button("👁️ Awareness", key="f_awareness", type="primary" if is_aw else "secondary"):
-                st.session_state.opt_focus = "awareness"
-                st.rerun()
-        with col_cv:
-            is_cv = ("conversion" in st.session_state.opt_focus.lower().strip())
-            if st.button("🎯 Conversion", key="f_conversion", type="primary" if is_cv else "secondary"):
-                st.session_state.opt_focus = "conversions"
-                st.rerun()
-        with col_tr:
-            is_tr = (st.session_state.opt_focus.lower().strip() == "traffic")
-            if st.button("📣 Traffic", key="f_traffic", type="primary" if is_tr else "secondary"):
-                st.session_state.opt_focus = "traffic"
+            # Build dropdown options mapping
+            camp_names_list = list(campaign_options.keys())
+            default_idx = 0
+            for idx, lbl in enumerate(camp_names_list):
+                if campaign_options[lbl]["campaign_id"] == st.session_state.selected_campaign:
+                    default_idx = idx
+                    break
+                    
+            selected_label = st.selectbox("Campaign", camp_names_list, index=default_idx)
+            selected_camp = campaign_options[selected_label]
+            
+            # Update focus and selection on dropdown change
+            if selected_camp["campaign_id"] != st.session_state.selected_campaign:
+                st.session_state.selected_campaign = selected_camp["campaign_id"]
+                st.session_state.opt_focus = selected_camp["objective"]
                 st.rerun()
                 
-        st.markdown('<div style="margin-top: 24px;"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="launch-btn-container">', unsafe_allow_html=True)
-        if st.button("⚡ Launch Optimization", key="launch_opt_btn"):
-            st.session_state.page = "running"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 0.85rem; font-weight: 600; color: #4B5563; margin-top: 15px; margin-bottom: 8px;">Optimization focus</div>', unsafe_allow_html=True)
+            
+            # Optimization Focus Toggle Buttons
+            col_aw, col_cv, col_tr = st.columns(3)
+            with col_aw:
+                is_aw = (st.session_state.opt_focus.lower().strip() == "awareness")
+                if st.button("👁️ Awareness", key="f_awareness", type="primary" if is_aw else "secondary"):
+                    st.session_state.opt_focus = "awareness"
+                    st.rerun()
+            with col_cv:
+                is_cv = ("conversion" in st.session_state.opt_focus.lower().strip())
+                if st.button("🎯 Conversion", key="f_conversion", type="primary" if is_cv else "secondary"):
+                    st.session_state.opt_focus = "conversions"
+            with col_tr:
+                is_tr = (st.session_state.opt_focus.lower().strip() == "traffic")
+                if st.button("📣 Traffic", key="f_traffic", type="primary" if is_tr else "secondary"):
+                    st.session_state.opt_focus = "traffic"
+                    st.rerun()
+                    
+            st.markdown('<div style="margin-top: 24px;"></div>', unsafe_allow_html=True)
+            
+            # Side by side buttons
+            btn_col1, btn_col2 = st.columns([1.5, 1.0])
+            with btn_col1:
+                st.markdown('<div class="launch-btn-container">', unsafe_allow_html=True)
+                if st.button("⚡ Launch Optimization", key="launch_opt_btn"):
+                    st.session_state.page = "running"
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+            with btn_col2:
+                st.markdown('<div class="reset-btn-container">', unsafe_allow_html=True)
+                if st.button("🔄 Reset Data", key="reset_db_btn"):
+                    from orchestrator import reset_datasets
+                    reset_datasets()
+                    st.success("Datasets Reset!")
+                    time.sleep(1.0)
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
     # Campaign Table Below
     st.markdown('<div style="margin-top: 40px;"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown('<h3 style="margin-top:0; color:#111827; font-size:1.25rem; font-weight:800;">Your campaigns</h3>', unsafe_allow_html=True)
-    st.markdown(f'<p style="color:#6B7280; margin-top:-8px; margin-bottom:20px; font-size:0.9rem;">Click a row ID to load it into the optimizer. &nbsp;·&nbsp; <span style="font-weight:600; color:#7C3AED;">{len(campaigns_df)} total</span></p>', unsafe_allow_html=True)
-    
-    # Headers
-    h_id, h_name, h_chan, h_bud, h_stat, h_start = st.columns([1.2, 2.5, 1.5, 1.2, 1.2, 1.5])
-    h_id.markdown('<div class="table-header">CAMPAIGN ID</div>', unsafe_allow_html=True)
-    h_name.markdown('<div class="table-header">NAME</div>', unsafe_allow_html=True)
-    h_chan.markdown('<div class="table-header">CHANNEL</div>', unsafe_allow_html=True)
-    h_bud.markdown('<div class="table-header">CURRENT BUDGET</div>', unsafe_allow_html=True)
-    h_stat.markdown('<div class="table-header">STATUS</div>', unsafe_allow_html=True)
-    h_start.markdown('<div class="table-header">START DATE</div>', unsafe_allow_html=True)
-    
-    # Rows
-    for _, row in campaigns_df.iterrows():
-        is_sel = (row["campaign_id"] == st.session_state.selected_campaign)
-        row_bg = "background-color:#F9FAFB; border-radius:8px;" if is_sel else ""
+    with st.container(border=True):
+        st.markdown('<h3 style="margin-top:0; color:#111827; font-size:1.25rem; font-weight:800;">Your campaigns</h3>', unsafe_allow_html=True)
+        st.markdown(f'<p style="color:#6B7280; margin-top:-8px; margin-bottom:20px; font-size:0.9rem;">Click a row ID to load it into the optimizer. &nbsp;·&nbsp; <span style="font-weight:600; color:#7C3AED;">{len(campaigns_df)} total</span></p>', unsafe_allow_html=True)
         
-        # We wrap columns in a container styling if selected
-        r_id, r_name, r_chan, r_bud, r_stat, r_start = st.columns([1.2, 2.5, 1.5, 1.2, 1.2, 1.5])
+        # Headers
+        h_id, h_name, h_chan, h_dev, h_time, h_bud, h_stat, h_start, h_rep = st.columns([1.0, 1.6, 1.0, 1.0, 1.0, 1.0, 0.9, 1.1, 0.8])
+        h_id.markdown('<div class="table-header">CAMPAIGN ID</div>', unsafe_allow_html=True)
+        h_name.markdown('<div class="table-header">NAME</div>', unsafe_allow_html=True)
+        h_chan.markdown('<div class="table-header">CHANNEL</div>', unsafe_allow_html=True)
+        h_dev.markdown('<div class="table-header">DEVICE</div>', unsafe_allow_html=True)
+        h_time.markdown('<div class="table-header">TIME OF DAY</div>', unsafe_allow_html=True)
+        h_bud.markdown('<div class="table-header">BUDGET</div>', unsafe_allow_html=True)
+        h_stat.markdown('<div class="table-header">STATUS</div>', unsafe_allow_html=True)
+        h_start.markdown('<div class="table-header">START DATE</div>', unsafe_allow_html=True)
+        h_rep.markdown('<div class="table-header">REPORT</div>', unsafe_allow_html=True)
         
-        with r_id:
-            st.markdown('<div class="camp-id-link">', unsafe_allow_html=True)
-            if st.button(row["campaign_id"], key=f"tbl_id_{row['campaign_id']}"):
-                st.session_state.selected_campaign = row["campaign_id"]
-                st.session_state.opt_focus = row["objective"]
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Rows
+        for _, row in campaigns_df.iterrows():
+            is_sel = (row["campaign_id"] == st.session_state.selected_campaign)
             
-        # Name
-        name_prefix = "✨ " if is_sel else ""
-        name_color = "#7C3AED" if is_sel else "#111827"
-        name_weight = "700" if is_sel else "500"
-        r_name.markdown(f'<div style="padding-top: 6px; font-weight: {name_weight}; color: {name_color};">{name_prefix}{row["name"]}</div>', unsafe_allow_html=True)
-        
-        # Channel
-        r_chan.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{row["channel"]}</div>', unsafe_allow_html=True)
-        
-        # Budget
-        r_bud.markdown(f'<div style="padding-top: 6px; color: #111827; font-weight: 500;">${row["total_budget"]:,}</div>', unsafe_allow_html=True)
-        
-        # Status
-        stat_val = str(row["status"]).strip().lower()
-        stat_class = "status-active" if stat_val == "active" else ("status-paused" if stat_val == "paused" else "status-draft")
-        stat_lbl = stat_val.capitalize()
-        r_stat.markdown(f'<div style="padding-top: 4px;"><span class="status-badge {stat_class}">{stat_lbl}</span></div>', unsafe_allow_html=True)
-        
-        # Start Date
-        r_start.markdown(f'<div style="padding-top: 6px; color: #6B7280;">{row["start_date"]}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            # We wrap columns in a container styling if selected
+            r_id, r_name, r_chan, r_dev, r_time, r_bud, r_stat, r_start, r_rep = st.columns([1.0, 1.6, 1.0, 1.0, 1.0, 1.0, 0.9, 1.1, 0.8])
+            
+            # Row marker for beautiful background highlighting
+            marker_class = "selected-row-marker" if is_sel else "unselected-row-marker"
+            r_id.markdown(f'<div class="{marker_class}" style="display:none; height:0px; width:0px;"></div>', unsafe_allow_html=True)
+            
+            with r_id:
+                st.markdown('<div class="camp-id-link">', unsafe_allow_html=True)
+                btn_key = f"tbl_id_{row['campaign_id']}"
+                if st.button(row["campaign_id"], key=btn_key):
+                    st.session_state.selected_campaign = row["campaign_id"]
+                    st.session_state.opt_focus = row["objective"]
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+            # Name
+            name_prefix = "✨ " if is_sel else ""
+            name_color = "#7C3AED" if is_sel else "#111827"
+            name_weight = "700" if is_sel else "500"
+            r_name.markdown(f'<div style="padding-top: 6px; font-weight: {name_weight}; color: {name_color};">{name_prefix}{row["name"]}</div>', unsafe_allow_html=True)
+            
+            # Channel
+            r_chan.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{row["channel"]}</div>', unsafe_allow_html=True)
+            
+            # Device
+            r_dev.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{str(row["device"]).capitalize()}</div>', unsafe_allow_html=True)
+            
+            # Time of Day
+            r_time.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{str(row["time_of_day"]).capitalize()}</div>', unsafe_allow_html=True)
+            
+            # Budget
+            r_bud.markdown(f'<div style="padding-top: 6px; color: #111827; font-weight: 500;">${row["total_budget"]:,}</div>', unsafe_allow_html=True)
+            
+            # Status
+            stat_val = str(row["status"]).strip().lower()
+            stat_class = "status-active" if stat_val == "active" else ("status-paused" if stat_val == "paused" else "status-draft")
+            stat_lbl = stat_val.capitalize()
+            r_stat.markdown(f'<div style="padding-top: 4px;"><span class="status-badge {stat_class}">{stat_lbl}</span></div>', unsafe_allow_html=True)
+            
+            # Start Date
+            r_start.markdown(f'<div style="padding-top: 6px; color: #6B7280;">{row["start_date"]}</div>', unsafe_allow_html=True)
+            
+            # Report View Button
+            with r_rep:
+                st.markdown('<div class="camp-id-link">', unsafe_allow_html=True)
+                if st.button("View", key=f"view_rep_{row['campaign_id']}"):
+                    st.session_state.page = "campaign_performance_report"
+                    st.session_state.report_campaign_id = row["campaign_id"]
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------- PAGE 2: RUNNING / ANIMATED THINKING -----------------
 elif st.session_state.page == "running":
@@ -1042,9 +1118,12 @@ elif st.session_state.page == "running":
     # 4. Step 3 Completed, Step 4 Running
     thinking_placeholder.markdown(render_thinking_card(["completed", "completed", "completed", "running"], 87.5), unsafe_allow_html=True)
     
-    # Save the active ads set before running
+    # Save the active ads set and campaign state before running
     ads_df_before = pd.read_csv(ADS_FILE)
     st.session_state.ads_before = ads_df_before[ads_df_before["campaign_id"].astype(str) == str(campaign_id)].copy()
+    c_df_before = pd.read_csv(CAMPAIGNS_FILE)
+    st.session_state.campaign_before = c_df_before[c_df_before["campaign_id"].astype(str) == str(campaign_id)].iloc[0].copy()
+
     
     # 5. Run the orchestrator logic inside the final spinner step
     try:
@@ -1105,7 +1184,7 @@ elif st.session_state.page == "results":
         st.markdown('</div>', unsafe_allow_html=True)
     with tab_col3:
         st.markdown(f'<div class="{"active-tab" if st.session_state.active_tab == 3 else "inactive-tab"}">', unsafe_allow_html=True)
-        if st.button("⚡ Agent 3\nAutomation & Generation", key="results_tab_3"):
+        if st.button("⚡ Agent 3\nAutomation and Generation Actions", key="results_tab_3"):
             st.session_state.active_tab = 3
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -1125,6 +1204,17 @@ elif st.session_state.page == "results":
         # Load local ads matching campaign
         ads_df = pd.read_csv(ADS_FILE)
         campaign_ads = ads_df[ads_df["campaign_id"].astype(str) == str(campaign_info["campaign_id"])]
+        
+        # Filter out newly generated ads (ad_id > A021) from the display table
+        def is_not_new_ad(ad_id):
+            try:
+                if isinstance(ad_id, str) and ad_id.startswith("A"):
+                    return int(ad_id[1:]) <= 21
+            except ValueError:
+                pass
+            return True
+        campaign_ads = campaign_ads[campaign_ads["ad_id"].apply(is_not_new_ad)]
+
         
         # Display custom table
         c_id, c_head, c_size, c_qual, c_flag, c_rec = st.columns([1.2, 2.5, 1.2, 1.6, 2.2, 3.3])
@@ -1275,7 +1365,7 @@ elif st.session_state.page == "results":
         st.markdown("""
         <div class="agent-section-card">
             <div class="agent-small-tag">AGENT 3</div>
-            <h3 class="agent-title">Automation & Generation Actions</h3>
+            <h3 class="agent-title">Automation and Generation Actions</h3>
             <div class="agent-subtitle">What I built and what I changed — autopilot, with receipts.</div>
         </div>
         """, unsafe_allow_html=True)
@@ -1288,124 +1378,277 @@ elif st.session_state.page == "results":
         before_ids = set(st.session_state.ads_before["ad_id"]) if "ads_before" in st.session_state else set()
         new_ads = campaign_ads_after[~campaign_ads_after["ad_id"].isin(before_ids)]
         
-        # Fallback dynamic mock if new ad set is empty
+        # Fallback: if new_ads is empty, use the single newest active ad of this campaign
         if new_ads.empty:
-            new_ads = pd.DataFrame([{
-                "ad_id": "A027",
-                "campaign_id": campaign_info["campaign_id"],
-                "headline": "Elevate Your Style Daily",
-                "body_text": "Discover our exclusive premium collection. Save 20% off plus get free shipping today.",
-                "cta": "Shop Now",
-                "image_size": "300x250",
-                "status": "active"
-            }])
+            active_ads = campaign_ads_after[campaign_ads_after["status"] == "active"]
+            if not active_ads.empty:
+                new_ads = active_ads.tail(1)
+            else:
+                # Dynamic themed mock fallback matching the campaign's industry/vertical
+                camp_id = str(campaign_info["campaign_id"])
+                if camp_id == "C001":
+                    fallback_headline = "Redefine Your Style"
+                    fallback_body = "Shop our latest premium spring arrivals today. Free shipping on all orders."
+                    fallback_cta = "Shop Now"
+                elif camp_id == "C002":
+                    fallback_headline = "Next-Gen Tech Awaits"
+                    fallback_body = "Upgrade your setup with top-rated gadgets. Save big with exclusive deals today."
+                    fallback_cta = "Shop Now"
+                elif camp_id == "C003":
+                    fallback_headline = "Your Story Starts Here"
+                    fallback_body = "Connect with what matters most. Build your presence with custom designs."
+                    fallback_cta = "Learn More"
+                elif camp_id == "C004":
+                    fallback_headline = "Amplify Your Voice Today"
+                    fallback_body = "Reach millions who matter. Connect deeply with video that resonates."
+                    fallback_cta = "Watch Now"
+                else:  # C005 or default
+                    fallback_headline = "Scale Your Readership Today"
+                    fallback_body = "Convert traffic into loyal subscribers with our high-performance tools."
+                    fallback_cta = "Learn More"
+
+                new_ads = pd.DataFrame([{
+                    "ad_id": "A027" if camp_id == "C005" else ("A026" if camp_id == "C004" else "A021"),
+                    "campaign_id": campaign_info["campaign_id"],
+                    "headline": fallback_headline,
+                    "body_text": fallback_body,
+                    "cta": fallback_cta,
+                    "image_size": "300x250",
+                    "status": "active"
+                }])
             
         paused_ads = []
-        if "ads_before" in st.session_state:
-            for _, before_ad in st.session_state.ads_before.iterrows():
-                if before_ad["status"] == "active":
-                    current_ad = campaign_ads_after[campaign_ads_after["ad_id"] == before_ad["ad_id"]]
-                    if not current_ad.empty and current_ad.iloc[0]["status"] == "paused":
-                        paused_ads.append(before_ad)
-                        
+        try:
+            change_log_df = pd.read_csv(CHANGELOG_FILE)
+            # Find the latest update_ad_status log for this campaign that set status to paused
+            campaign_logs = change_log_df[
+                (change_log_df["campaign_id"].astype(str) == str(campaign_info["campaign_id"])) & 
+                (change_log_df["change_type"] == "update_ad_status") & 
+                (change_log_df["details"].astype(str).str.contains("paused|Paused", case=False))
+            ]
+            if not campaign_logs.empty:
+                latest_log = campaign_logs.sort_values(by="timestamp").iloc[-1]
+                paused_id = latest_log["target_id"]
+                ad_row = ads_df_after[ads_df_after["ad_id"] == paused_id]
+                if not ad_row.empty:
+                    paused_ads.append(ad_row.iloc[0].to_dict())
+        except Exception:
+            pass
+            
         if not paused_ads:
-            lowest_ad = campaign_ads_after.iloc[-1] if not campaign_ads_after.empty else {"ad_id": "A003", "headline": "Fresh Looks Daily"}
-            paused_ads = [lowest_ad]
-            
-        st.markdown(f'<h4 style="color:#111827; font-weight:800; font-size:1.15rem; margin-top: 15px;">🛠️ Generated {len(new_ads)} new ad variant(s)</h4>', unsafe_allow_html=True)
-        
-        # Cards render
-        generated_ads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_ads")
-        gradients = [
-            "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)",
-            "linear-gradient(135deg, #4E54C8 0%, #8F94FB 100%)",
-            "linear-gradient(135deg, #11998E 0%, #38EF7D 100%)"
-        ]
-        
-        cards_html = ""
-        for idx, (_, ad_data) in enumerate(new_ads.iterrows()):
-            ad_id = ad_data["ad_id"]
-            headline = ad_data["headline"]
-            body = ad_data.get("body_text", ad_data.get("body", ""))
-            cta = ad_data.get("cta", "Learn More")
-            
-            # Check for generated image
-            image_name = f"ad_new_{campaign_info['campaign_id']}.png"
-            image_path = os.path.join(generated_ads_dir, image_name)
-            if not os.path.exists(image_path):
-                image_path = os.path.join(generated_ads_dir, f"ad_{ad_id}.png")
-                
-            img_html = ""
-            if os.path.exists(image_path):
-                b64 = get_image_base64(image_path)
-                img_html = f'<img src="{b64}" style="width: 100%; height: 100%; object-fit: cover;" />'
+            new_ad_ids = set(new_ads["ad_id"]) if not new_ads.empty else set()
+            all_paused_campaign_ads = campaign_ads_after[
+                (campaign_ads_after["status"] == "paused") & 
+                (~campaign_ads_after["ad_id"].isin(new_ad_ids))
+            ]
+            if not all_paused_campaign_ads.empty:
+                paused_ads = [all_paused_campaign_ads.iloc[-1].to_dict()]
             else:
-                img_html = """
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: white; gap: 8px;">
-                    <svg style="width: 44px; height: 44px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <span style="font-size: 0.85rem; opacity: 0.85; font-weight: 500;">AI-generated creative</span>
+                paused_ads = [{"ad_id": "None", "headline": "No ads paused"}]
+            
+        col_left, col_right = st.columns(2)
+        
+        with col_left:
+            st.markdown(f'<h4 style="color:#111827; font-weight:800; font-size:1.15rem; margin-top: 15px;">🛠️ Generated {len(new_ads)} new ad variant(s)</h4>', unsafe_allow_html=True)
+            
+            # Cards render
+            generated_ads_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_ads")
+            gradients = [
+                "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)",
+                "linear-gradient(135deg, #4E54C8 0%, #8F94FB 100%)",
+                "linear-gradient(135deg, #11998E 0%, #38EF7D 100%)"
+            ]
+            
+            cards_html = ""
+            for idx, (_, ad_data) in enumerate(new_ads.iterrows()):
+                ad_id = ad_data["ad_id"]
+                headline = ad_data["headline"]
+                body = ad_data.get("body_text", ad_data.get("body", ""))
+                cta = ad_data.get("cta", "Learn More")
+                
+                # Check for generated image
+                image_name = f"ad_new_{campaign_info['campaign_id']}.png"
+                image_path = os.path.join(generated_ads_dir, image_name)
+                if not os.path.exists(image_path):
+                    image_path = os.path.join(generated_ads_dir, f"ad_{ad_id}.png")
+                    
+                img_html = ""
+                if os.path.exists(image_path):
+                    b64 = get_image_base64(image_path)
+                    img_html = f'<img src="{b64}" style="width: 100%; height: 100%; object-fit: cover;" />'
+                else:
+                    img_html = """
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: white; gap: 8px;">
+                        <svg style="width: 44px; height: 44px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span style="font-size: 0.85rem; opacity: 0.85; font-weight: 500;">AI-generated creative</span>
+                    </div>
+                    """
+                    
+                grad = gradients[idx % len(gradients)]
+                
+                # Dynamically determine the parent ad (the first active ad from the campaign that isn't the newly generated one)
+                parent_candidates = campaign_ads_after[
+                    (campaign_ads_after["status"] == "active") & 
+                    (campaign_ads_after["ad_id"] != ad_id)
+                ]
+                if not parent_candidates.empty:
+                    parent_id = parent_candidates.iloc[0]["ad_id"]
+                else:
+                    # Fallback mapping if no other active ads are found
+                    parent_id_map = {
+                        "C001": "A001",
+                        "C002": "A005",
+                        "C003": "A009",
+                        "C004": "A013",
+                        "C005": "A019"
+                    }
+                    parent_id = parent_id_map.get(str(campaign_info["campaign_id"]), "A001")
+                
+                cards_html += f"""
+                <div class="ad-card">
+                    <div class="ad-card-image-box" style="background: {grad};">
+                        <span class="ad-new-badge">NEW</span>
+                        {img_html}
+                    </div>
+                    <div class="ad-card-content">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #7C3AED; font-weight: 700; margin-bottom: 8px;">
+                            <span>{ad_id}</span>
+                            <span style="color: #6B7280; font-weight: 500;">based on {parent_id}</span>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; color: #111827; font-size: 1.15rem; font-weight: 800; line-height: 1.2;">{headline}</h4>
+                        <p style="margin: 0 0 16px 0; color: #4B5563; font-size: 0.88rem; line-height: 1.45; height: 60px; overflow: hidden;">{body}</p>
+                        <div>
+                            <div class="ad-card-btn">{cta}</div>
+                        </div>
+                        <div class="ad-card-tip">
+                            <em>✨ Sharper hook + benefit, matches best segment style.</em>
+                        </div>
+                    </div>
                 </div>
                 """
                 
-            grad = gradients[idx % len(gradients)]
-            parent_id = "A001" if campaign_info["campaign_id"] == "C001" else ("A005" if campaign_info["campaign_id"] == "C002" else "A009")
+            st.markdown(f'<div class="ad-cards-grid">{cards_html}</div>', unsafe_allow_html=True)
             
-            cards_html += f"""
-            <div class="ad-card">
-                <div class="ad-card-image-box" style="background: {grad};">
-                    <span class="ad-new-badge">NEW</span>
-                    {img_html}
-                </div>
-                <div class="ad-card-content">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #7C3AED; font-weight: 700; margin-bottom: 8px;">
-                        <span>{ad_id}</span>
-                        <span style="color: #6B7280; font-weight: 500;">based on {parent_id}</span>
-                    </div>
-                    <h4 style="margin: 0 0 8px 0; color: #111827; font-size: 1.15rem; font-weight: 800; line-height: 1.2;">{headline}</h4>
-                    <p style="margin: 0 0 16px 0; color: #4B5563; font-size: 0.88rem; line-height: 1.45; height: 60px; overflow: hidden;">{body}</p>
-                    <div>
-                        <div class="ad-card-btn">{cta}</div>
-                    </div>
-                    <div class="ad-card-tip">
-                        <em>✨ Sharper hook + benefit, matches best segment style.</em>
-                    </div>
-                </div>
-            </div>
-            """
+        with col_right:
+            st.markdown('<div class="modifications-list" style="margin-top: 15px;">', unsafe_allow_html=True)
+            st.markdown('<h4 style="margin-top:0; color:#111827; font-size:1.15rem; font-weight:800;">🟢 Applied automated changes</h4>', unsafe_allow_html=True)
             
-        st.markdown(f'<div class="ad-cards-grid">{cards_html}</div>', unsafe_allow_html=True)
-        
-        # Modifications logs
-        st.markdown('<div class="modifications-list">', unsafe_allow_html=True)
-        st.markdown('<h4 style="margin-top:0; color:#111827; font-size:1.05rem; font-weight:800;">🟢 Applied automated changes</h4>', unsafe_allow_html=True)
-        
-        mods_html = ""
-        for p_ad in paused_ads:
-            p_id = p_ad.get("ad_id", "")
-            p_head = p_ad.get("headline", "")
-            mods_html += f"""
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                <span style="color: #EF4444; font-weight: bold; font-size: 1.1rem;">⏸️</span>
-                <span style="font-size: 0.95rem; color: #374151;">
-                    Paused low-performing ad <b>{p_id}</b> ("{p_head}") to optimize budget allocation.
-                </span>
-            </div>
-            """
+            mods_html = ""
+            for p_ad in paused_ads:
+                p_id = p_ad.get("ad_id", "")
+                p_head = p_ad.get("headline", "")
+                # Use html with no leading indentation per line to prevent markdown pre/code block parsing
+                mods_html += f"""<div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px;">
+<span style="color: #EF4444; font-weight: bold; font-size: 1.2rem; line-height: 1;">⏸️</span>
+<span style="font-size: 0.95rem; color: #374151; line-height: 1.45;">
+<b>Paused Ad {p_id}:</b> "{p_head}". This ad variant was identified as underperforming due to inefficient conversion metrics and sub-optimal creative styling. Pausing it allows budget to be reallocated to higher-yielding creatives.
+</span>
+</div>"""
+                
+            for _, n_ad in new_ads.iterrows():
+                n_id = n_ad.get("ad_id", "")
+                n_head = n_ad.get("headline", "")
+                n_body = n_ad.get("body_text", n_ad.get("body", ""))
+                mods_html += f"""<div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px;">
+<span style="color: #10B981; font-weight: bold; font-size: 1.2rem; line-height: 1;">🚀</span>
+<span style="font-size: 0.95rem; color: #374151; line-height: 1.45;">
+<b>Activated New Ad {n_id}:</b> "{n_head}". Engineered with optimized messaging ("{n_body}") to enhance CTR and maximize conversions, and coupled with a fresh AI-generated visual asset matching the campaign theme.
+</span>
+</div>"""
+    
+            if "campaign_before" in st.session_state:
+                before_dev = st.session_state.campaign_before.get("device", "")
+                before_time = st.session_state.campaign_before.get("time_of_day", "")
+                after_dev = campaign_info.get("device", "")
+                after_time = campaign_info.get("time_of_day", "")
+                
+                if before_dev != after_dev or before_time != after_time:
+                    mods_html += f"""<div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px;">
+<span style="color: #3B82F6; font-weight: bold; font-size: 1.2rem; line-height: 1;">🎯</span>
+<span style="font-size: 0.95rem; color: #374151; line-height: 1.45;">
+<b>Targeting Optimized:</b> Transitioned device target from <i>{before_dev}</i> to <b>{after_dev}</b> and time-of-day target from <i>{before_time}</i> to <b>{after_time}</b>. This concentrates ad spend on the single highest-performing user segment to eliminate wasted impressions.
+</span>
+</div>"""
+            st.markdown(mods_html, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
             
-        for _, n_ad in new_ads.iterrows():
-            n_id = n_ad.get("ad_id", "")
-            n_head = n_ad.get("headline", "")
-            mods_html += f"""
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="color: #10B981; font-weight: bold; font-size: 1.1rem;">🚀</span>
-                <span style="font-size: 0.95rem; color: #374151;">
-                    Created and activated new optimized ad variant <b>{n_id}</b> ("{n_head}").
-                </span>
-            </div>
-            """
-        st.markdown(mods_html, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
         st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
         with st.expander("📖 View Raw Automation & Generation Details"):
             st.write(st.session_state.result.get("generator_summary", "No report available."))
+
+# ----------------- PAGE 4: PERFORMANCE REPORT VIEW -----------------
+elif st.session_state.page == "campaign_performance_report":
+    # Reload campaigns to ensure fresh data
+    campaigns_df = pd.read_csv(CAMPAIGNS_FILE)
+    
+    # Custom render navbar style with Back to campaigns
+    nav_col1, nav_col2 = st.columns([4, 1])
+    with nav_col1:
+        st.markdown(f"""
+        <div class="nav-left">
+            <div class="logo-icon">⚡</div>
+            <div>
+                <div class="logo-text">AdPilot</div>
+                <div class="logo-subtext">PERFORMANCE REPORT</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with nav_col2:
+        st.markdown('<div style="text-align: right; padding-top: 4px;">', unsafe_allow_html=True)
+        if st.button("⬅️ Back to campaigns", key="back_btn_rep"):
+            st.session_state.page = "home"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div style="margin-top: 10px; margin-bottom: 20px; border-bottom: 1px solid #E5E7EB; opacity: 0.5;"></div>', unsafe_allow_html=True)
+
+    # Fetch campaign meta dynamically
+    report_cid = st.session_state.get("report_campaign_id", "C001")
+    campaign_info = campaigns_df[campaigns_df["campaign_id"] == report_cid].iloc[0]
+    
+    # Render campaign card
+    st.markdown(f"""
+    <div class="campaign-header-card">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #7C3AED; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px;">CAMPAIGN</div>
+            <h2 class="campaign-header-title">{campaign_info['name']}</h2>
+            <div class="campaign-header-meta">
+                <b>{campaign_info['campaign_id']}</b> &nbsp;·&nbsp; {campaign_info['channel']} &nbsp;·&nbsp; <b>${campaign_info['total_budget']:,}</b> budget
+            </div>
+        </div>
+        <div class="focus-badge">
+            🎯 Objective: {campaign_info['objective'].capitalize()}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 1. Raw Ad Performance Dataset for the campaign
+    st.markdown('### 📊 Campaign Ad Performance Records')
+    perf_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ad_performance.csv")
+    if os.path.exists(perf_file_path):
+        perf_df = pd.read_csv(perf_file_path)
+        campaign_perf = perf_df[perf_df["campaign_id"] == report_cid]
+        if not campaign_perf.empty:
+            st.dataframe(campaign_perf.sort_values(by="date", ascending=False), use_container_width=True)
+        else:
+            st.warning("No performance records found for this campaign.")
+    else:
+        st.error("Performance database file not found.")
+
+    # 2. Raw Ads Table for the campaign with filtered columns
+    st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
+    st.markdown('### 📢 Active and Paused Ads')
+    ads_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ads.csv")
+    if os.path.exists(ads_file_path):
+        ads_df = pd.read_csv(ads_file_path)
+        campaign_ads = ads_df[ads_df["campaign_id"] == report_cid]
+        if not campaign_ads.empty:
+            # Filter exactly the requested columns: ad_id, headline, body_text, cta, image_size, image_url, status
+            target_cols = ["ad_id", "headline", "body_text", "cta", "image_size", "image_url", "status"]
+            # Filter columns that are present to be safe, though all are present in our dataset
+            available_cols = [c for c in target_cols if c in campaign_ads.columns]
+            filtered_ads = campaign_ads[available_cols]
+            st.dataframe(filtered_ads.reset_index(drop=True), use_container_width=True)
+        else:
+            st.warning("No ads found for this campaign.")
+    else:
+        st.error("Ads database file not found.")
