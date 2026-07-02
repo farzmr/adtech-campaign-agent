@@ -574,6 +574,7 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 CAMPAIGNS_FILE = os.path.join(DATA_DIR, "campaigns.csv")
 ADS_FILE = os.path.join(DATA_DIR, "ads.csv")
 PERFORMANCE_FILE = os.path.join(DATA_DIR, "ad_performance.csv")
+CHANGELOG_FILE = os.path.join(DATA_DIR, "change_log.csv")
 
 # Dynamic Seeding Fallback (if files are completely empty/missing)
 def seed_data_if_missing():
@@ -891,7 +892,6 @@ if st.session_state.page == "home":
             is_cv = ("conversion" in st.session_state.opt_focus.lower().strip())
             if st.button("🎯 Conversion", key="f_conversion", type="primary" if is_cv else "secondary"):
                 st.session_state.opt_focus = "conversions"
-                st.rerun()
         with col_tr:
             is_tr = (st.session_state.opt_focus.lower().strip() == "traffic")
             if st.button("📣 Traffic", key="f_traffic", type="primary" if is_tr else "secondary"):
@@ -902,6 +902,16 @@ if st.session_state.page == "home":
         st.markdown('<div class="launch-btn-container">', unsafe_allow_html=True)
         if st.button("⚡ Launch Optimization", key="launch_opt_btn"):
             st.session_state.page = "running"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Reset button below Launch Optimization
+        st.markdown('<div style="margin-top: 12px; text-align: center;">', unsafe_allow_html=True)
+        if st.button("🔄 Reset All Datasets", key="reset_db_btn", use_container_width=True):
+            from orchestrator import reset_datasets
+            reset_datasets()
+            st.success("Datasets restored to baseline settings!")
+            time.sleep(1.0)
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)

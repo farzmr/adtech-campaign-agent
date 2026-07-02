@@ -7,3 +7,7 @@ pandas
 pillow
 python-dotenv
 nest-asyncio
+torch
+diffusers
+transformers
+accelerate

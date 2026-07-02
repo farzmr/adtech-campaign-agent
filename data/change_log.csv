@@ -1,18 +1,4 @@
 log_id,timestamp,campaign_id,change_type,target_id,details
-L001,2026-07-01T17:16:58.980843,C001,create_ad,A030,Created new ad with headline: 'Test Ad For Logging'
-L002,2026-07-01T17:16:58.983751,C001,update_ad_status,A003,Updated status to 'paused'
-L003,2026-07-01T17:16:58.986487,C001,update_campaign_targeting,C001,"Updated targeting to device: 'desktop', time_of_day: 'afternoon'"
-L004,2026-07-01T17:16:58.989837,C001,update_campaign_targeting,C001,"Updated targeting to device: 'mobile, tablet, desktop', time_of_day: 'morning, afternoon, night'"
-L005,2026-07-01T17:16:58.992498,C001,update_ad_status,A003,Updated status to 'active'
-L006,2026-07-01T17:58:20.942301,C004,update_ad_status,A015,Updated status to 'paused'
-L007,2026-07-01T17:58:33.960162,C004,create_ad,A031,Created new ad with headline: 'Master Your Brand's Reach Today'
-L008,2026-07-01T17:59:01.579909,C004,update_campaign_targeting,C004,"Updated targeting to device: 'desktop', time_of_day: 'night'"
-L009,2026-07-01T18:13:14.508796,C001,update_ad_status,A030,Updated status to 'paused'
-L010,2026-07-01T18:13:14.516038,C001,create_ad,A032,Created new ad with headline: 'Your Fresh Style Awaits'
-L011,2026-07-01T18:13:29.006291,C001,update_campaign_targeting,C001,"Updated targeting to device: 'mobile', time_of_day: 'afternoon'"
-L012,2026-07-01T18:25:46.718509,C002,update_ad_status,A008,Updated status to 'paused'
-L013,2026-07-01T18:25:46.725398,C002,create_ad,A029,Created new ad with headline: 'Unlock Your Potential: Upgrade Today!'
-L014,2026-07-01T18:25:46.730599,C002,update_campaign_targeting,C002,"Updated targeting to device: 'desktop', time_of_day: 'afternoon'"
-L015,2026-07-01T18:38:50.911917,C005,update_ad_status,A018,Updated status to 'paused'
-L016,2026-07-01T18:38:50.919207,C005,create_ad,A022,Created new ad with headline: 'Find Your Daily Inspiration'
-L017,2026-07-01T18:38:50.924211,C005,update_campaign_targeting,C005,"Updated targeting to device: 'mobile', time_of_day: 'morning'"
+L001,2026-07-01T20:17:05.002032,C001,update_ad_status,A004,Updated status to 'paused'
+L002,2026-07-01T20:17:17.881633,C001,create_ad,A022,Created new ad with headline: 'Your Fresh Style Awaits: Shop the Collection'
+L003,2026-07-01T20:18:15.374567,C001,update_campaign_targeting,C001,"Updated targeting to device: 'mobile', time_of_day: 'afternoon'"

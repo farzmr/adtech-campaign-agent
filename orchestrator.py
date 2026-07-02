@@ -15,8 +15,10 @@ from agents import (
 )
 
 def reset_datasets():
-    """Resets campaign and ads datasets to their original state."""
+    """Resets campaign and ads datasets, and change logs to their original baseline states."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 1. Reset all campaigns targeting back to default settings
     campaigns_file = os.path.join(base_dir, "data", "campaigns.csv")
     if os.path.exists(campaigns_file):
         try:
@@ -24,25 +26,41 @@ def reset_datasets():
             df_camp["device"] = "mobile, tablet, desktop"
             df_camp["time_of_day"] = "morning, afternoon, night"
             df_camp.to_csv(campaigns_file, index=False)
+            print("Campaign datasets reset successfully.")
         except Exception as e:
             print(f"Error resetting campaigns dataset: {e}")
         
+    # 2. Reset ads: delete any generated ads (> A021) and set original 21 ads to active
     ads_file = os.path.join(base_dir, "data", "ads.csv")
     if os.path.exists(ads_file):
         try:
             df_ads = pd.read_csv(ads_file)
-            df_ads["status"] = "active"
+            
             def should_keep(ad_id):
                 try:
                     if isinstance(ad_id, str) and ad_id.startswith("A"):
                         return int(ad_id[1:]) <= 21
-                except ValueError:
+                except (ValueError, TypeError):
                     pass
                 return True
-            df_ads = df_ads[df_ads["ad_id"].apply(should_keep)]
+                
+            df_ads = df_ads[df_ads["ad_id"].apply(should_keep)].copy()
+            df_ads["status"] = "active"
             df_ads.to_csv(ads_file, index=False)
+            print("Ads datasets reset successfully.")
         except Exception as e:
             print(f"Error resetting ads dataset: {e}")
+
+    # 3. Clear/Truncate change log
+    changelog_file = os.path.join(base_dir, "data", "change_log.csv")
+    if os.path.exists(changelog_file):
+        try:
+            # Re-write the header row only
+            with open(changelog_file, "w") as f:
+                f.write("log_id,timestamp,campaign_id,change_type,target_id,details\n")
+            print("Change log cleared successfully.")
+        except Exception as e:
+            print(f"Error clearing change log: {e}")
 
 async def run_optimization_workflow(campaign_id: str) -> dict:
     """Coordinates the 3 agents in sequence to complete one full optimization run.
