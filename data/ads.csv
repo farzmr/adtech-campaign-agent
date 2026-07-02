@@ -2,11 +2,11 @@ ad_id,campaign_id,headline,body_text,cta,image_size,image_url,ad_type,status,cop
 A001,C001,Spring Into Style,Discover our spring collection.,Shop Now,728x90,images/A001.png,display,active,urgent,product
 A002,C001,New Season Arrivals,Shop the latest trends now.,Shop Now,300x250,images/A002.png,display,active,playful,lifestyle
 A003,C001,Fresh Looks Daily,New arrivals every week.,Explore Now,160x600,images/A003.png,display,active,informational,promo
-A004,C001,Trend Alert 2024,Style redefined this season.,Get Started,320x50,images/A004.png,display,paused,emotional,lifestyle
+A004,C001,Trend Alert 2024,Style redefined this season.,Get Started,320x50,images/A004.png,display,active,emotional,lifestyle
 A005,C002,Next-Gen Gadgets,Best gadgets at best prices.,Shop Now,300x250,images/A005.png,display,active,urgent,product
 A006,C002,Tech Deals Today,"Top tech, unbeatable deals.",Get Started,728x90,images/A006.png,display,active,informational,promo
 A007,C002,Power Your Life,Upgrade your devices today.,Learn More,320x50,images/A007.png,display,active,playful,product
-A008,C002,Smart Savings,Save big on top brands.,Shop Now,160x600,images/A008.png,display,active,urgent,text-heavy
+A008,C002,Smart Savings,Save big on top brands.,Shop Now,160x600,images/A008.png,display,paused,urgent,text-heavy
 A009,C003,Your Story Starts Here,Build your brand with us.,Learn More,728x90,images/A009.png,display,active,emotional,lifestyle
 A010,C003,Moments That Matter,Connect with what matters.,Discover More,300x250,images/A010.png,display,active,emotional,lifestyle
 A011,C003,Live Beautifully,Inspiring stories every day.,Explore Now,160x600,images/A011.png,display,active,informational,product
@@ -20,4 +20,4 @@ A018,C005,Ideas Worth Clicking,Get more readers today.,Learn More,320x50,images/
 A019,C005,Daily Inspiration,Clicks that convert.,Explore Now,300x250,images/A019.png,display,active,emotional,lifestyle
 A020,C005,Explore More Today,Grow your audience fast.,Get Started,160x600,images/A020.png,display,active,urgent,promo
 A021,C001,Your Fresh Style Awaits,Explore our vibrant new collection and redefine your look.,Learn More,300x250,images/A021.png,display,active,conversational,lifestyle
-A022,C001,Your Fresh Style Awaits: Shop the Collection,Explore our vibrant new collection and redefine your look. Shop the collection today.,Learn More,300x250,images/A022.png,display,active,conversational,lifestyle
+A022,C002,Upgrade to Next-Gen Tech,Upgrade to next-gen tech today. Premium gadgets starting at just $49. Shop now!,Learn More,300x250,images/A022.png,display,active,conversational,lifestyle

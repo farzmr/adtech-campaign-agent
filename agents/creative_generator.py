@@ -239,8 +239,8 @@ def get_local_sd_pipeline():
     # Select device: MPS for Apple Silicon, CPU otherwise
     if torch.backends.mps.is_available():
         device = "mps"
-        # float16 is faster and uses less memory
-        torch_dtype = torch.float16
+        # float32 is required on Apple Silicon MPS to avoid generating completely black images (NaN weights error)
+        torch_dtype = torch.float32
     else:
         device = "cpu"
         torch_dtype = torch.float32

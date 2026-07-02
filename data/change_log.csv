@@ -1,4 +1,4 @@
 log_id,timestamp,campaign_id,change_type,target_id,details
-L001,2026-07-01T20:17:05.002032,C001,update_ad_status,A004,Updated status to 'paused'
-L002,2026-07-01T20:17:17.881633,C001,create_ad,A022,Created new ad with headline: 'Your Fresh Style Awaits: Shop the Collection'
-L003,2026-07-01T20:18:15.374567,C001,update_campaign_targeting,C001,"Updated targeting to device: 'mobile', time_of_day: 'afternoon'"
+L001,2026-07-02T18:42:10.603961,C002,update_ad_status,A008,Updated status to 'paused'
+L002,2026-07-02T18:42:25.235281,C002,create_ad,A022,Created new ad with headline: 'Upgrade to Next-Gen Tech'
+L003,2026-07-02T18:43:45.924143,C002,update_campaign_targeting,C002,"Updated targeting to device: 'desktop', time_of_day: 'afternoon'"

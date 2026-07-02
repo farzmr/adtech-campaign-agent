@@ -1,6 +1,6 @@
 campaign_id,name,objective,channel,total_budget,status,start_date,end_date,time_of_day,device
-C001,Spring Fashion Drop,conversions,Meta,8000,active,2024-06-01,2024-06-30,afternoon,mobile
-C002,Tech Gadgets Sale,conversions,Google Display,6000,active,2024-06-01,2024-06-30,"morning, afternoon, night","mobile, tablet, desktop"
+C001,Spring Fashion Drop,conversions,Meta,8000,active,2024-06-01,2024-06-30,"morning, afternoon, night","mobile, tablet, desktop"
+C002,Tech Gadgets Sale,conversions,Google Display,6000,active,2024-06-01,2024-06-30,afternoon,desktop
 C003,Brand Moments,awareness,Pinterest,5000,active,2024-06-01,2024-06-30,"morning, afternoon, night","mobile, tablet, desktop"
 C004,Reach and Remember,awareness,YouTube,7000,active,2024-06-01,2024-06-30,"morning, afternoon, night","mobile, tablet, desktop"
 C005,Daily Reads Traffic,traffic,TikTok,4000,active,2024-06-01,2024-06-30,"morning, afternoon, night","mobile, tablet, desktop"

@@ -91,13 +91,13 @@ st.markdown("""
         border: 1px solid #DDD6FE;
     }
 
-    /* Card Panels */
-    .panel-card {
-        background-color: white;
-        border: 1px solid #E5E7EB;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    /* Card Panels & Streamlit Bordered Containers */
+    .panel-card, div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: white !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 16px !important;
+        padding: 24px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
     }
 
     .panel-title {
@@ -169,9 +169,9 @@ st.markdown("""
         font-size: 0.95rem !important;
     }
 
-    /* Gradient Launch Button */
+    /* Gradient Launch Button (Super glowy and purple) */
     .launch-btn-container button {
-        background: linear-gradient(135deg, #7C3AED 0%, #D946EF 100%) !important;
+        background: linear-gradient(135deg, #6D28D9 0%, #A855F7 100%) !important;
         color: white !important;
         border: none !important;
         padding: 12px 24px !important;
@@ -179,13 +179,45 @@ st.markdown("""
         font-weight: 700 !important;
         width: 100% !important;
         font-size: 1.1rem !important;
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.4) !important;
         height: 50px !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.3s ease !important;
     }
     .launch-btn-container button:hover {
-        box-shadow: 0 6px 16px rgba(124, 58, 237, 0.45) !important;
-        transform: translateY(-1px) !important;
+        box-shadow: 0 0 25px rgba(168, 85, 247, 0.7) !important;
+        transform: translateY(-2px) scale(1.02) !important;
+    }
+
+    /* Small Reset Button next to Launch Button */
+    .reset-btn-container button {
+        background-color: #F9FAFB !important;
+        color: #4B5563 !important;
+        border: 1px solid #D1D5DB !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        height: 50px !important;
+        width: 100% !important;
+        font-size: 0.9rem !important;
+        transition: all 0.2s ease !important;
+    }
+    .reset-btn-container button:hover {
+        background-color: #F3F4F6 !important;
+        border-color: #9CA3AF !important;
+    }
+
+    /* Custom selected campaign row highlight (Beautiful light purple theme) */
+    div[data-testid="stHorizontalBlock"]:has(.selected-row-marker) {
+        background-color: #FAF5FF !important; /* Premium light purple background */
+        border: 1px solid #E9D5FF !important; /* Soft border */
+        border-radius: 12px !important;
+        padding: 8px !important;
+        box-shadow: 0 4px 10px rgba(168, 85, 247, 0.05) !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.unselected-row-marker) {
+        border: 1px solid transparent !important;
+        padding: 8px !important;
+        transition: all 0.2s ease !important;
     }
 
     /* Custom Table Header & Rows */
@@ -731,8 +763,16 @@ def get_ad_analysis(ad_id, headline, body_text, cta, image_size):
     analysis = AD_ANALYSIS_FALLBACK.get(ad_id, {
         "quality": 92,
         "flagged": ["clean"],
-        "recommendations": ["Monitor performance in upcoming window", "Optimize audience targeting"]
+        "recommendations": ["None"]
     })
+    # If flagged as clean, clear recommendations
+    flagged_lower = [str(f).strip().lower() for f in analysis.get("flagged", [])]
+    if "clean" in flagged_lower or not flagged_lower:
+        analysis = {
+            "quality": analysis.get("quality", 95),
+            "flagged": ["clean"],
+            "recommendations": ["None"]
+        }
     return analysis
 
 # ----------------- BASE64 IMAGE HELPER -----------------
@@ -859,124 +899,138 @@ if st.session_state.page == "home":
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-        st.markdown('<div class="panel-title">RUN AN OPTIMIZATION</div>', unsafe_allow_html=True)
-        
-        # Build dropdown options mapping
-        camp_names_list = list(campaign_options.keys())
-        default_idx = 0
-        for idx, lbl in enumerate(camp_names_list):
-            if campaign_options[lbl]["campaign_id"] == st.session_state.selected_campaign:
-                default_idx = idx
-                break
-                
-        selected_label = st.selectbox("Campaign", camp_names_list, index=default_idx)
-        selected_camp = campaign_options[selected_label]
-        
-        # Update focus and selection on dropdown change
-        if selected_camp["campaign_id"] != st.session_state.selected_campaign:
-            st.session_state.selected_campaign = selected_camp["campaign_id"]
-            st.session_state.opt_focus = selected_camp["objective"]
-            st.rerun()
+        with st.container(border=True):
+            st.markdown('<div class="panel-title">RUN AN OPTIMIZATION</div>', unsafe_allow_html=True)
             
-        st.markdown('<div style="font-size: 0.85rem; font-weight: 600; color: #4B5563; margin-top: 15px; margin-bottom: 8px;">Optimization focus</div>', unsafe_allow_html=True)
-        
-        # Optimization Focus Toggle Buttons
-        col_aw, col_cv, col_tr = st.columns(3)
-        with col_aw:
-            is_aw = (st.session_state.opt_focus.lower().strip() == "awareness")
-            if st.button("👁️ Awareness", key="f_awareness", type="primary" if is_aw else "secondary"):
-                st.session_state.opt_focus = "awareness"
-                st.rerun()
-        with col_cv:
-            is_cv = ("conversion" in st.session_state.opt_focus.lower().strip())
-            if st.button("🎯 Conversion", key="f_conversion", type="primary" if is_cv else "secondary"):
-                st.session_state.opt_focus = "conversions"
-        with col_tr:
-            is_tr = (st.session_state.opt_focus.lower().strip() == "traffic")
-            if st.button("📣 Traffic", key="f_traffic", type="primary" if is_tr else "secondary"):
-                st.session_state.opt_focus = "traffic"
+            # Build dropdown options mapping
+            camp_names_list = list(campaign_options.keys())
+            default_idx = 0
+            for idx, lbl in enumerate(camp_names_list):
+                if campaign_options[lbl]["campaign_id"] == st.session_state.selected_campaign:
+                    default_idx = idx
+                    break
+                    
+            selected_label = st.selectbox("Campaign", camp_names_list, index=default_idx)
+            selected_camp = campaign_options[selected_label]
+            
+            # Update focus and selection on dropdown change
+            if selected_camp["campaign_id"] != st.session_state.selected_campaign:
+                st.session_state.selected_campaign = selected_camp["campaign_id"]
+                st.session_state.opt_focus = selected_camp["objective"]
                 st.rerun()
                 
-        st.markdown('<div style="margin-top: 24px;"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="launch-btn-container">', unsafe_allow_html=True)
-        if st.button("⚡ Launch Optimization", key="launch_opt_btn"):
-            st.session_state.page = "running"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Reset button below Launch Optimization
-        st.markdown('<div style="margin-top: 12px; text-align: center;">', unsafe_allow_html=True)
-        if st.button("🔄 Reset All Datasets", key="reset_db_btn", use_container_width=True):
-            from orchestrator import reset_datasets
-            reset_datasets()
-            st.success("Datasets restored to baseline settings!")
-            time.sleep(1.0)
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 0.85rem; font-weight: 600; color: #4B5563; margin-top: 15px; margin-bottom: 8px;">Optimization focus</div>', unsafe_allow_html=True)
+            
+            # Optimization Focus Toggle Buttons
+            col_aw, col_cv, col_tr = st.columns(3)
+            with col_aw:
+                is_aw = (st.session_state.opt_focus.lower().strip() == "awareness")
+                if st.button("👁️ Awareness", key="f_awareness", type="primary" if is_aw else "secondary"):
+                    st.session_state.opt_focus = "awareness"
+                    st.rerun()
+            with col_cv:
+                is_cv = ("conversion" in st.session_state.opt_focus.lower().strip())
+                if st.button("🎯 Conversion", key="f_conversion", type="primary" if is_cv else "secondary"):
+                    st.session_state.opt_focus = "conversions"
+            with col_tr:
+                is_tr = (st.session_state.opt_focus.lower().strip() == "traffic")
+                if st.button("📣 Traffic", key="f_traffic", type="primary" if is_tr else "secondary"):
+                    st.session_state.opt_focus = "traffic"
+                    st.rerun()
+                    
+            st.markdown('<div style="margin-top: 24px;"></div>', unsafe_allow_html=True)
+            
+            # Side by side buttons
+            btn_col1, btn_col2 = st.columns([1.5, 1.0])
+            with btn_col1:
+                st.markdown('<div class="launch-btn-container">', unsafe_allow_html=True)
+                if st.button("⚡ Launch Optimization", key="launch_opt_btn"):
+                    st.session_state.page = "running"
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+            with btn_col2:
+                st.markdown('<div class="reset-btn-container">', unsafe_allow_html=True)
+                if st.button("🔄 Reset Data", key="reset_db_btn"):
+                    from orchestrator import reset_datasets
+                    reset_datasets()
+                    st.success("Datasets Reset!")
+                    time.sleep(1.0)
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
     # Campaign Table Below
     st.markdown('<div style="margin-top: 40px;"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown('<h3 style="margin-top:0; color:#111827; font-size:1.25rem; font-weight:800;">Your campaigns</h3>', unsafe_allow_html=True)
-    st.markdown(f'<p style="color:#6B7280; margin-top:-8px; margin-bottom:20px; font-size:0.9rem;">Click a row ID to load it into the optimizer. &nbsp;·&nbsp; <span style="font-weight:600; color:#7C3AED;">{len(campaigns_df)} total</span></p>', unsafe_allow_html=True)
-    
-    # Headers
-    h_id, h_name, h_chan, h_dev, h_time, h_bud, h_stat, h_start = st.columns([1.0, 1.8, 1.0, 1.0, 1.0, 1.1, 1.0, 1.1])
-    h_id.markdown('<div class="table-header">CAMPAIGN ID</div>', unsafe_allow_html=True)
-    h_name.markdown('<div class="table-header">NAME</div>', unsafe_allow_html=True)
-    h_chan.markdown('<div class="table-header">CHANNEL</div>', unsafe_allow_html=True)
-    h_dev.markdown('<div class="table-header">DEVICE</div>', unsafe_allow_html=True)
-    h_time.markdown('<div class="table-header">TIME OF DAY</div>', unsafe_allow_html=True)
-    h_bud.markdown('<div class="table-header">BUDGET</div>', unsafe_allow_html=True)
-    h_stat.markdown('<div class="table-header">STATUS</div>', unsafe_allow_html=True)
-    h_start.markdown('<div class="table-header">START DATE</div>', unsafe_allow_html=True)
-    
-    # Rows
-    for _, row in campaigns_df.iterrows():
-        is_sel = (row["campaign_id"] == st.session_state.selected_campaign)
-        row_bg = "background-color:#F9FAFB; border-radius:8px;" if is_sel else ""
+    with st.container(border=True):
+        st.markdown('<h3 style="margin-top:0; color:#111827; font-size:1.25rem; font-weight:800;">Your campaigns</h3>', unsafe_allow_html=True)
+        st.markdown(f'<p style="color:#6B7280; margin-top:-8px; margin-bottom:20px; font-size:0.9rem;">Click a row ID to load it into the optimizer. &nbsp;·&nbsp; <span style="font-weight:600; color:#7C3AED;">{len(campaigns_df)} total</span></p>', unsafe_allow_html=True)
         
-        # We wrap columns in a container styling if selected
-        r_id, r_name, r_chan, r_dev, r_time, r_bud, r_stat, r_start = st.columns([1.0, 1.8, 1.0, 1.0, 1.0, 1.1, 1.0, 1.1])
+        # Headers
+        h_id, h_name, h_chan, h_dev, h_time, h_bud, h_stat, h_start, h_rep = st.columns([1.0, 1.6, 1.0, 1.0, 1.0, 1.0, 0.9, 1.1, 0.8])
+        h_id.markdown('<div class="table-header">CAMPAIGN ID</div>', unsafe_allow_html=True)
+        h_name.markdown('<div class="table-header">NAME</div>', unsafe_allow_html=True)
+        h_chan.markdown('<div class="table-header">CHANNEL</div>', unsafe_allow_html=True)
+        h_dev.markdown('<div class="table-header">DEVICE</div>', unsafe_allow_html=True)
+        h_time.markdown('<div class="table-header">TIME OF DAY</div>', unsafe_allow_html=True)
+        h_bud.markdown('<div class="table-header">BUDGET</div>', unsafe_allow_html=True)
+        h_stat.markdown('<div class="table-header">STATUS</div>', unsafe_allow_html=True)
+        h_start.markdown('<div class="table-header">START DATE</div>', unsafe_allow_html=True)
+        h_rep.markdown('<div class="table-header">REPORT</div>', unsafe_allow_html=True)
         
-        with r_id:
-            st.markdown('<div class="camp-id-link">', unsafe_allow_html=True)
-            btn_key = f"tbl_id_{row['campaign_id']}"
-            if st.button(row["campaign_id"], key=btn_key):
-                st.session_state.selected_campaign = row["campaign_id"]
-                st.session_state.opt_focus = row["objective"]
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Rows
+        for _, row in campaigns_df.iterrows():
+            is_sel = (row["campaign_id"] == st.session_state.selected_campaign)
             
-        # Name
-        name_prefix = "✨ " if is_sel else ""
-        name_color = "#7C3AED" if is_sel else "#111827"
-        name_weight = "700" if is_sel else "500"
-        r_name.markdown(f'<div style="padding-top: 6px; font-weight: {name_weight}; color: {name_color};">{name_prefix}{row["name"]}</div>', unsafe_allow_html=True)
-        
-        # Channel
-        r_chan.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{row["channel"]}</div>', unsafe_allow_html=True)
-        
-        # Device
-        r_dev.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{str(row["device"]).capitalize()}</div>', unsafe_allow_html=True)
-        
-        # Time of Day
-        r_time.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{str(row["time_of_day"]).capitalize()}</div>', unsafe_allow_html=True)
-        
-        # Budget
-        r_bud.markdown(f'<div style="padding-top: 6px; color: #111827; font-weight: 500;">${row["total_budget"]:,}</div>', unsafe_allow_html=True)
-        
-        # Status
-        stat_val = str(row["status"]).strip().lower()
-        stat_class = "status-active" if stat_val == "active" else ("status-paused" if stat_val == "paused" else "status-draft")
-        stat_lbl = stat_val.capitalize()
-        r_stat.markdown(f'<div style="padding-top: 4px;"><span class="status-badge {stat_class}">{stat_lbl}</span></div>', unsafe_allow_html=True)
-        
-        # Start Date
-        r_start.markdown(f'<div style="padding-top: 6px; color: #6B7280;">{row["start_date"]}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            # We wrap columns in a container styling if selected
+            r_id, r_name, r_chan, r_dev, r_time, r_bud, r_stat, r_start, r_rep = st.columns([1.0, 1.6, 1.0, 1.0, 1.0, 1.0, 0.9, 1.1, 0.8])
+            
+            # Row marker for beautiful background highlighting
+            marker_class = "selected-row-marker" if is_sel else "unselected-row-marker"
+            r_id.markdown(f'<div class="{marker_class}" style="display:none; height:0px; width:0px;"></div>', unsafe_allow_html=True)
+            
+            with r_id:
+                st.markdown('<div class="camp-id-link">', unsafe_allow_html=True)
+                btn_key = f"tbl_id_{row['campaign_id']}"
+                if st.button(row["campaign_id"], key=btn_key):
+                    st.session_state.selected_campaign = row["campaign_id"]
+                    st.session_state.opt_focus = row["objective"]
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+            # Name
+            name_prefix = "✨ " if is_sel else ""
+            name_color = "#7C3AED" if is_sel else "#111827"
+            name_weight = "700" if is_sel else "500"
+            r_name.markdown(f'<div style="padding-top: 6px; font-weight: {name_weight}; color: {name_color};">{name_prefix}{row["name"]}</div>', unsafe_allow_html=True)
+            
+            # Channel
+            r_chan.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{row["channel"]}</div>', unsafe_allow_html=True)
+            
+            # Device
+            r_dev.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{str(row["device"]).capitalize()}</div>', unsafe_allow_html=True)
+            
+            # Time of Day
+            r_time.markdown(f'<div style="padding-top: 6px; color: #4B5563;">{str(row["time_of_day"]).capitalize()}</div>', unsafe_allow_html=True)
+            
+            # Budget
+            r_bud.markdown(f'<div style="padding-top: 6px; color: #111827; font-weight: 500;">${row["total_budget"]:,}</div>', unsafe_allow_html=True)
+            
+            # Status
+            stat_val = str(row["status"]).strip().lower()
+            stat_class = "status-active" if stat_val == "active" else ("status-paused" if stat_val == "paused" else "status-draft")
+            stat_lbl = stat_val.capitalize()
+            r_stat.markdown(f'<div style="padding-top: 4px;"><span class="status-badge {stat_class}">{stat_lbl}</span></div>', unsafe_allow_html=True)
+            
+            # Start Date
+            r_start.markdown(f'<div style="padding-top: 6px; color: #6B7280;">{row["start_date"]}</div>', unsafe_allow_html=True)
+            
+            # Report View Button
+            with r_rep:
+                st.markdown('<div class="camp-id-link">', unsafe_allow_html=True)
+                if st.button("View", key=f"view_rep_{row['campaign_id']}"):
+                    st.session_state.page = "campaign_performance_report"
+                    st.session_state.report_campaign_id = row["campaign_id"]
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------- PAGE 2: RUNNING / ANIMATED THINKING -----------------
 elif st.session_state.page == "running":
@@ -1521,3 +1575,80 @@ elif st.session_state.page == "results":
         st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
         with st.expander("📖 View Raw Automation & Generation Details"):
             st.write(st.session_state.result.get("generator_summary", "No report available."))
+
+# ----------------- PAGE 4: PERFORMANCE REPORT VIEW -----------------
+elif st.session_state.page == "campaign_performance_report":
+    # Reload campaigns to ensure fresh data
+    campaigns_df = pd.read_csv(CAMPAIGNS_FILE)
+    
+    # Custom render navbar style with Back to campaigns
+    nav_col1, nav_col2 = st.columns([4, 1])
+    with nav_col1:
+        st.markdown(f"""
+        <div class="nav-left">
+            <div class="logo-icon">⚡</div>
+            <div>
+                <div class="logo-text">AdPilot</div>
+                <div class="logo-subtext">PERFORMANCE REPORT</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with nav_col2:
+        st.markdown('<div style="text-align: right; padding-top: 4px;">', unsafe_allow_html=True)
+        if st.button("⬅️ Back to campaigns", key="back_btn_rep"):
+            st.session_state.page = "home"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div style="margin-top: 10px; margin-bottom: 20px; border-bottom: 1px solid #E5E7EB; opacity: 0.5;"></div>', unsafe_allow_html=True)
+
+    # Fetch campaign meta dynamically
+    report_cid = st.session_state.get("report_campaign_id", "C001")
+    campaign_info = campaigns_df[campaigns_df["campaign_id"] == report_cid].iloc[0]
+    
+    # Render campaign card
+    st.markdown(f"""
+    <div class="campaign-header-card">
+        <div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #7C3AED; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 2px;">CAMPAIGN</div>
+            <h2 class="campaign-header-title">{campaign_info['name']}</h2>
+            <div class="campaign-header-meta">
+                <b>{campaign_info['campaign_id']}</b> &nbsp;·&nbsp; {campaign_info['channel']} &nbsp;·&nbsp; <b>${campaign_info['total_budget']:,}</b> budget
+            </div>
+        </div>
+        <div class="focus-badge">
+            🎯 Objective: {campaign_info['objective'].capitalize()}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 1. Raw Ad Performance Dataset for the campaign
+    st.markdown('### 📊 Campaign Ad Performance Records')
+    perf_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ad_performance.csv")
+    if os.path.exists(perf_file_path):
+        perf_df = pd.read_csv(perf_file_path)
+        campaign_perf = perf_df[perf_df["campaign_id"] == report_cid]
+        if not campaign_perf.empty:
+            st.dataframe(campaign_perf.sort_values(by="date", ascending=False), use_container_width=True)
+        else:
+            st.warning("No performance records found for this campaign.")
+    else:
+        st.error("Performance database file not found.")
+
+    # 2. Raw Ads Table for the campaign with filtered columns
+    st.markdown('<div style="margin-top: 30px;"></div>', unsafe_allow_html=True)
+    st.markdown('### 📢 Active and Paused Ads')
+    ads_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "ads.csv")
+    if os.path.exists(ads_file_path):
+        ads_df = pd.read_csv(ads_file_path)
+        campaign_ads = ads_df[ads_df["campaign_id"] == report_cid]
+        if not campaign_ads.empty:
+            # Filter exactly the requested columns: ad_id, headline, body_text, cta, image_size, image_url, status
+            target_cols = ["ad_id", "headline", "body_text", "cta", "image_size", "image_url", "status"]
+            # Filter columns that are present to be safe, though all are present in our dataset
+            available_cols = [c for c in target_cols if c in campaign_ads.columns]
+            filtered_ads = campaign_ads[available_cols]
+            st.dataframe(filtered_ads.reset_index(drop=True), use_container_width=True)
+        else:
+            st.warning("No ads found for this campaign.")
+    else:
+        st.error("Ads database file not found.")
